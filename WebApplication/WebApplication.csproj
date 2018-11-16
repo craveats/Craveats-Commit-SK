@@ -195,8 +195,10 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
+    <None Include="App_Start\_aspnet_Startup.Auth._cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\HoldingPageController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="DAL\Address.cs">
@@ -278,6 +280,7 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Models\AccountViewModels.cs" />
+    <Compile Include="Models\AuthenticatedUser.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -287,12 +290,23 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Startup.cs" />
+    <Content Include="Content\images\CraveatsLogo.jpg" />
+    <Content Include="Views\HoldingPage\HoldingProfile.cshtml" />
+    <Content Include="Views\HoldingPage\HoldingMessages.cshtml" />
+    <Content Include="Views\HoldingPage\HoldingOrders.cshtml" />
+    <Content Include="Views\HoldingPage\HoldingCheckout.cshtml" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Content\bootstrap-readable.css" />
+    <Content Include="Content\bootstrap-readable.min.css" />
+    <Content Include="Content\bootstrap-simplex.css" />
+    <Content Include="Content\bootstrap-simplex.min.css" />
     <Content Include="Content\bootstrap-theme.css" />
     <Content Include="Content\bootstrap-theme.min.css" />
     <Content Include="Content\bootstrap.css" />
     <Content Include="Content\bootstrap.min.css" />
+    <Content Include="Content\images\CraveatsLogo_343x240.png" />
+    <Content Include="Content\images\CraveatsText_215x65.png" />
     <Content Include="DAL\Craveats.Context.tt">
       <DependentUpon>Craveats.DataStore.edmx</DependentUpon>
       <Generator>TextTemplatingFileGenerator</Generator>
@@ -315,6 +329,8 @@
     <Content Include="ApplicationInsights.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="Properties\PublishProfiles\craveats - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\craveats - Web Deploy.pubxml" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -389,6 +405,12 @@
       <Generator>EntityModelCodeGenerator</Generator>
       <LastGenOutput>Craveats.DataStore.Designer.cs</LastGenOutput>
     </EntityDeploy>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Generic.Obfuscation\Generic.Obfuscation.csproj">
+      <Project>{135236b7-87c5-46eb-a6ea-fd5eee50d81a}</Project>
+      <Name>Generic.Obfuscation</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

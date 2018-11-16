@@ -22,3 +22,6 @@ select,
 textarea {
     max-width: 280px;
 }
+
+/*Site background color*/
+.sitebg { background-color:#f96815; }
