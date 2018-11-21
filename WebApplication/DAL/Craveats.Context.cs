@@ -46,19 +46,6 @@ namespace WebApplication.DAL
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<Vendor> Vendor { get; set; }
     
-        public virtual ObjectResult<AuthenticateUser_Result> AuthenticateUser(string emailAddress, string password)
-        {
-            var emailAddressParameter = emailAddress != null ?
-                new ObjectParameter("emailAddress", emailAddress) :
-                new ObjectParameter("emailAddress", typeof(string));
-    
-            var passwordParameter = password != null ?
-                new ObjectParameter("password", password) :
-                new ObjectParameter("password", typeof(string));
-    
-            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<AuthenticateUser_Result>("AuthenticateUser", emailAddressParameter, passwordParameter);
-        }
-    
         public virtual ObjectResult<Nullable<bool>> DoesRegistrantExist(string emailAddress)
         {
             var emailAddressParameter = emailAddress != null ?

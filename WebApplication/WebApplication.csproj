@@ -197,6 +197,8 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <None Include="App_Start\_aspnet_Startup.Auth._cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
+    <Compile Include="BLL\CEUserManager.cs" />
+    <Compile Include="Common\AppCommons.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HoldingPageController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -234,6 +236,7 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Include="DAL\DAL.Common.cs" />
     <Compile Include="DAL\Enquiry.cs">
       <DependentUpon>Craveats.tt</DependentUpon>
     </Compile>
@@ -283,14 +286,21 @@
     <Compile Include="Models\AuthenticatedUser.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
+    <Compile Include="Models\ViewModel\EntityDTO.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="BLL\SessionManager.cs" />
     <Compile Include="Startup.cs" />
+    <Content Include="Content\images\CraveatsLogo.ico" />
     <Content Include="Content\images\CraveatsLogo.jpg" />
+    <Content Include="Content\images\CraveatsLogoNText_944x221.png" />
+    <Content Include="Content\images\CraveatsNewLogo.ico" />
+    <Content Include="Content\images\CraveatsNewLogo_138x136.png" />
+    <Content Include="Content\images\CraveatsNewText_215x65.png" />
     <Content Include="Views\HoldingPage\HoldingProfile.cshtml" />
     <Content Include="Views\HoldingPage\HoldingMessages.cshtml" />
     <Content Include="Views\HoldingPage\HoldingOrders.cshtml" />
@@ -362,7 +372,7 @@
     <Content Include="Views\Home\Index.cshtml" />
     <Content Include="Views\Account\_ExternalLoginsListPartial.cshtml" />
     <Content Include="Views\Account\ConfirmEmail.cshtml" />
-    <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />
+    <None Include="Views\Account\ExternalLoginConfirmation.cshtml" />
     <Content Include="Views\Account\ExternalLoginFailure.cshtml" />
     <Content Include="Views\Account\ForgotPassword.cshtml" />
     <Content Include="Views\Account\ForgotPasswordConfirmation.cshtml" />

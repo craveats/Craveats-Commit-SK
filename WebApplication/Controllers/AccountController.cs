@@ -3,64 +3,160 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using System.Web.Security;
+using Generic.Obfuscation.SHA1;
+using Generic.Obfuscation.TripleDES;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
+using WebApplication.Common;
 using WebApplication.DAL;
 using WebApplication.Models;
+using WebApplication.Models.ViewModel;
 
 namespace WebApplication.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class AccountController : Controller
     {
-        //private ApplicationSignInManager _signInManager;
-        //private ApplicationUserManager _userManager;
-
         public AccountController()
         {
+            //SessionManager.RegisterSessionActivity();
         }
-
-        //public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
-        //{
-        //    UserManager = userManager;
-        //    SignInManager = signInManager;
-        //}
-
-        //public ApplicationSignInManager SignInManager
-        //{
-        //    get
-        //    {
-        //        return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
-        //    }
-        //    private set 
-        //    { 
-        //        _signInManager = value; 
-        //    }
-        //}
-
-        //public ApplicationUserManager UserManager
-        //{
-        //    get
-        //    {
-        //        return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
-        //    }
-        //    private set
-        //    {
-        //        _userManager = value;
-        //    }
-        //}
 
         //
         // GET: /Account/Register
         [AllowAnonymous]
         public ActionResult Register()
         {
-            return View();
+            var roles = GetAllRoles();
+            var model = new RegisterViewModel();
+            model.Roles = GetSelectListItems(roles);
+            return View(model);
         }
+
+        private IEnumerable<string> GetAllRoles() {
+            return new List<string> {
+                /*CommonUtility.GetDescriptionFromEnumValue(*/UserTypeEnum.CraveatsDiner.GetDescription()/*)*/,
+                /*CommonUtility.GetDescriptionFromEnumValue(*/UserTypeEnum.PartnerRestaurant.GetDescription()/*)*/
+            };
+        }
+
+        // src:: https://nimblegecko.com/using-simple-drop-down-lists-in-ASP-NET-MVC/
+        // visited :: 2018 11 18
+        // This is one of the most important parts in the whole example.
+        // This function takes a list of strings and returns a list of SelectListItem objects.
+        // These objects are going to be used later in the SignUp.html template to render the
+        // DropDownList.
+        private IEnumerable<SelectListItem> GetSelectListItems(IEnumerable<string> elements)
+        {
+            // Create an empty list to hold result of the operation
+            var selectList = new List<SelectListItem>();
+
+            // For each string in the 'elements' variable, create a new SelectListItem object
+            // that has both its Value and Text properties set to a particular value.
+            // This will result in MVC rendering each item as:
+            //     <option value="State Name">State Name</option>
+            foreach (var element in elements)
+            {
+                selectList.Add(new SelectListItem
+                {
+                    Value = element,
+                    Text = element
+                });
+            }
+
+            return selectList;
+        }
+
+        //
+        // Action method for handling user-entered data when 'Role' button is pressed.
+        [HttpPost]
+        public ActionResult Register(RegisterViewModel model)
+        {
+            SessionManager.RegisterSessionActivity();
+
+            // Get all states again
+            var roles = GetAllRoles();
+
+            // Set these states on the model. We need to do this because
+            // only the selected value from the DropDownList is posted back, not the whole
+            // list of states.
+            model.Roles = GetSelectListItems(roles);
+
+            // In case everything is fine - i.e. both "Name" and "State" are entered/selected,
+            // redirect user to the "Done" page, and pass the user object along via Session
+            if (ModelState.IsValid)
+            {
+                CEUserManager ceUserManager = new CEUserManager();
+                SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
+                
+
+                if (!ceUserManager.IsRegistered(model.Email))
+                {
+                    string sha1HashText = sHA1HashProvider.SecureSHA1(model.Password.Trim());
+                    int? newUserID = ceUserManager.RegisterNew(model.Email, sha1HashText, model.Role);
+                    if (newUserID.HasValue)
+                    {
+                        UserDTO userDTO = new UserDTO() {
+                            Id = DataSecurityTripleDES.GetEncryptedText(newUserID),
+                            FirstName = model.FirstName,
+                            Surname = model.Surname,
+                            UserStatus = (int?) UserStatusEnum.Active
+                        };
+
+                        ceUserManager.SaveUserDetail(userDTO);
+
+                        using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                        {
+                            var result = craveatsDbContext.User.FirstOrDefault(u=> (u.UserStatus.HasValue && 
+                                new List<int> { (int)UserStatusEnum.Active, (int)UserStatusEnum.Blocked}.Contains(u.UserStatus.Value) && 
+                                (u.EmailAddress == model.Email)));
+                            if (result!=null)
+                            {
+                                userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(result);
+                                AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
+                                Session["loggeduser"] = authenticatedUserInfo;
+
+                                SessionManager.RegisterSessionActivity(userID: result.Id, loggedInAt: DateTime.Now);
+
+                                this.SignInUser(string.Format("{0}", authenticatedUserInfo.FullName), false);
+                            }
+                        }
+
+                        return RedirectToAction("Index", "Home");
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "An error occurred in registering new user. Please review input and re-try.");
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Email is registered and cannot be used to create another account.");
+                }
+            }
+
+            // Something is not right - so render the registration page again,
+            // keeping the data user has entered by supplying the model.
+            return View("Register", model);
+        }
+
+        //
+        // 3. Action method for displaying 'Done' page
+        public ActionResult Done()
+        {
+            // Get Sign Up information from the session
+            var model = Session["RegisterViewModel"] as RegisterViewModel;
+
+            // Display Done.html page that shows Name and selected state.
+            return View(model);
+        }
+
 
         //
         // GET: /Account/Login
@@ -117,11 +213,26 @@ namespace WebApplication.Controllers
 
                 using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
                 {
-                    var result = craveatsDbContext.AuthenticateUser(model.Email, model.Password);
-                    if (result?.Count() > 0)
+                    //byte[] baLeft = new byte[4], 
+                    //    baRight = new byte[4];
+                    //RandomNumberGenerator rngInstance = RandomNumberGenerator.Create();
+                    //rngInstance.GetBytes(baLeft);
+                    //rngInstance.GetBytes(baRight);
+
+                    //string left = BitConverter.ToString(baLeft).Replace("-", ""),
+                    //    right = BitConverter.ToString(baRight).Replace("-", ""),
+                    //    tempHashText = new SHA1HashProvider().HashSHA1(model.Password + left + right),
+                    //    finalBlock = left + tempHashText + right;
+                    CEUserManager ceUserManager = new CEUserManager();
+                    SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
+                    User anActiveOrBlockedUser = ceUserManager.GetSigningUserByEmail(model.Email);
+                    if (anActiveOrBlockedUser != null && sHA1HashProvider.CheckHashSHA1(model.Password, anActiveOrBlockedUser.Password, 8))
                     {
-                        AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(result.First());
+                        UserDTO userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(anActiveOrBlockedUser);
+                        AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
                         Session["loggeduser"] = authenticatedUserInfo;
+
+                        SessionManager.RegisterSessionActivity(loggedInAt: DateTime.Now);
 
                         this.SignInUser(string.Format("{0}", authenticatedUserInfo.FullName), false);
 
@@ -133,7 +244,7 @@ namespace WebApplication.Controllers
             }
             catch (Exception e)
             {
-                Console.Write(e);
+                System.Diagnostics.Trace.WriteLine(e);
             }
             return this.View(model);
         }
@@ -152,7 +263,20 @@ namespace WebApplication.Controllers
                 var authenticationManager = ctx.Authentication;
                 // Sign Out.    
                 authenticationManager.SignOut();
+
+                SessionManager.RegisterSessionActivity(loggedOffAt: DateTime.Now);
+
                 Session["loggeduser"] = null;
+                Session.Contents.Clear();
+                Session.Clear();
+
+                Session.RemoveAll();
+                foreach (string key in HttpContext.Request.Cookies.Keys.Cast<string>().ToList())
+                {
+                    HttpContext.Response.Cookies.Add(new HttpCookie(key, string.Empty) { Expires = DateTime.Now.Subtract(new TimeSpan(4, 15, 30)), HttpOnly = true });
+                }
+                Session.Abandon();
+                
             }
             catch (Exception e)
             {
@@ -564,5 +688,39 @@ namespace WebApplication.Controllers
             }
         }
         #endregion
+        #region Not-In-Use
+        //private ApplicationSignInManager _signInManager;
+        //private ApplicationUserManager _userManager;
+
+        //public AccountController(ApplicationUserManager userManager, ApplicationSignInManager signInManager )
+        //{
+        //    UserManager = userManager;
+        //    SignInManager = signInManager;
+        //}
+
+        //public ApplicationSignInManager SignInManager
+        //{
+        //    get
+        //    {
+        //        return _signInManager ?? HttpContext.GetOwinContext().Get<ApplicationSignInManager>();
+        //    }
+        //    private set 
+        //    { 
+        //        _signInManager = value; 
+        //    }
+        //}
+
+        //public ApplicationUserManager UserManager
+        //{
+        //    get
+        //    {
+        //        return _userManager ?? HttpContext.GetOwinContext().GetUserManager<ApplicationUserManager>();
+        //    }
+        //    private set
+        //    {
+        //        _userManager = value;
+        //    }
+        //}
+        #endregion  
     }
 }

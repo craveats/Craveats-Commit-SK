@@ -169,3 +169,87 @@
         }
     }
 }
+
+namespace Generic.Obfuscation.SHA1
+{
+    using System;
+    using System.Security.Cryptography;
+
+    public sealed class SHA1HashProvider
+    {
+        /// <summary>Creates a random string suitable for hiding in xxx-hashed strings</summary>
+        public string GetRandomHexString(int Length)
+        {
+            string[] hexChars = { "0", "f", "1", "e", "2", "d", "3", "c", "4", "b", "5", "a", "6", "9", "7", "8" };
+            Random rnd = new Random(new Random().Next(1000000));
+            System.Text.StringBuilder strRandom = new System.Text.StringBuilder("");
+            for (int i = 0; i < Length; i++)
+                strRandom.Append(hexChars[rnd.Next(0, 16)]);
+            return strRandom.ToString();
+        }
+
+        /// <summary>
+        /// Hashes text as SHA1.
+        /// </summary>
+        /// <param name="clearText">The clear text.</param>
+        /// <returns></returns>
+        public string HashSHA1(string clearText)
+        {
+            // create hash
+            System.Security.Cryptography.SHA1CryptoServiceProvider SHA1CSP = new System.Security.Cryptography.SHA1CryptoServiceProvider();
+            byte[] byteStream = System.Text.Encoding.UTF8.GetBytes(clearText);
+            byteStream = SHA1CSP.ComputeHash(byteStream);
+            System.Text.StringBuilder hashText = new System.Text.StringBuilder();
+            foreach (byte b in byteStream)
+            {
+                hashText.Append(b.ToString("x2").ToLower());
+            }
+            //Console.WriteLine($"hCT: {hashText.ToString()}");
+            return hashText.ToString();
+        }
+
+        public string SecureSHA1(string clearText)
+        {
+            // get random seeds
+            byte[] baLeft = new byte[4],
+                baRight = new byte[4];
+            RandomNumberGenerator rngInstance = RandomNumberGenerator.Create();
+            rngInstance.GetBytes(baLeft);
+            rngInstance.GetBytes(baRight);
+            string randomSeedStart = System.BitConverter.ToString(baLeft).Replace("-", ""),
+                randomSeedEnd = System.BitConverter.ToString(baRight).Replace("-", ""),
+                hashText = string.Empty; ;
+
+            {
+                // append random seed to end of input string
+                clearText += randomSeedStart + randomSeedEnd;
+                hashText = HashSHA1(clearText);
+
+                // append random seeds to start and end of hash value for extra security
+                hashText = randomSeedStart + hashText + randomSeedEnd;
+            }
+
+            return hashText;
+        }
+
+        public bool CheckHashSHA1(string clearText, string hashText, int seedLength = 8)
+        {
+            if (hashText.Length < 50) return false;
+
+            if (string.IsNullOrEmpty(clearText)) return false;
+
+            string checkHashText = string.Empty;
+
+            {
+                string randomSeedStart = hashText.Substring(0, seedLength), 
+                    randomSeedEnd = hashText.Substring(hashText.Length - seedLength);
+
+                clearText += randomSeedStart + randomSeedEnd;
+
+                checkHashText = HashSHA1(clearText);
+                checkHashText = randomSeedStart + checkHashText + randomSeedEnd;
+            }
+            return string.Compare(hashText, checkHashText, true) == 0;
+        }
+    }
+}

@@ -12,6 +12,35 @@
     <hr />
     @Html.ValidationSummary("", new { @class = "text-danger" })
     <div class="form-group">
+        @Html.LabelFor(m => m.Role, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.DropDownListFor(m => m.Role, // 1. Store selected value in Model.State;
+                // when page is rendered after postback,
+                // take selected value from Model.State.
+
+                // 2. Take list of values from Model.States
+                Model.Roles,
+
+                // 3. Text for the first 'default' option
+                "- Please select a role -",
+
+                //4. A class name to assign to <select> tag
+                new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.FirstName, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.Surname, new { @class = "col-md-2 control-label" })
+        <div class="col-md-10">
+            @Html.TextBoxFor(m => m.Surname, new { @class = "form-control" })
+        </div>
+    </div>
+    <div class="form-group">
         @Html.LabelFor(m => m.Email, new { @class = "col-md-2 control-label" })
         <div class="col-md-10">
             @Html.TextBoxFor(m => m.Email, new { @class = "form-control" })

@@ -4,15 +4,16 @@ using System.Linq;
 using System.Web;
 using WebApplication.DAL;
 using Generic.Obfuscation.TripleDES;
+using WebApplication.Models.ViewModel;
 
 namespace WebApplication.Models
 {
     [Serializable]
     public class AuthenticatedUserInfo
     {
-        private AuthenticateUser_Result _seed;
+        private UserDTO _seed;
 
-        public AuthenticatedUserInfo(AuthenticateUser_Result authenticateUser_Result)
+        public AuthenticatedUserInfo(UserDTO authenticateUser_Result)
         {
             _seed = authenticateUser_Result; 
         }
@@ -25,7 +26,7 @@ namespace WebApplication.Models
 
         public string UserId {
             get {
-                return DataSecurityTripleDES.GetEncryptedText(_seed?.Id);
+                return _seed?.Id;// DataSecurityTripleDES.GetEncryptedText(_seed?.Id);
             }
         }
     }
