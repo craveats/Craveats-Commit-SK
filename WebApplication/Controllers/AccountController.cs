@@ -30,7 +30,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/Register
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult Register()
         {
             var roles = GetAllRoles();
@@ -75,7 +75,7 @@ namespace WebApplication.Controllers
 
         //
         // Action method for handling user-entered data when 'Role' button is pressed.
-        [HttpPost]
+        [HttpPost, Tls]
         public ActionResult Register(RegisterViewModel model)
         {
             SessionManager.RegisterSessionActivity();
@@ -160,7 +160,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/Login
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult Login(string returnUrl)
         {
             ViewBag.ReturnUrl = returnUrl;
@@ -199,7 +199,7 @@ namespace WebApplication.Controllers
 
         //
         // POST: /Account/Login
-        [HttpPost]
+        [HttpPost, Tls]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public ActionResult Login(LoginViewModel model, string returnUrl)
@@ -251,7 +251,7 @@ namespace WebApplication.Controllers
 
         //
         // POST: /Account/LogOff
-        [HttpPost]
+        [HttpPost, Tls]
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
@@ -375,7 +375,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/ForgotPassword
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult ForgotPassword()
         {
             return View();
@@ -411,7 +411,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/ForgotPasswordConfirmation
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult ForgotPasswordConfirmation()
         {
             return View();
@@ -419,7 +419,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/ResetPassword
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult ResetPassword(string code)
         {
             return code == null ? View("Error") : View();
@@ -453,7 +453,7 @@ namespace WebApplication.Controllers
 
         //
         // GET: /Account/ResetPasswordConfirmation
-        [AllowAnonymous]
+        [AllowAnonymous, Tls]
         public ActionResult ResetPasswordConfirmation()
         {
             return View();
