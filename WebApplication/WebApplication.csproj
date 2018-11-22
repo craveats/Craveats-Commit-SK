@@ -198,6 +198,7 @@
     <None Include="App_Start\_aspnet_Startup.Auth._cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="BLL\CEUserManager.cs" />
+    <Compile Include="BLL\CommunicationManager.cs" />
     <Compile Include="Common\AppCommons.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HoldingPageController.cs" />

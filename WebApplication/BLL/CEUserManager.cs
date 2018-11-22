@@ -86,6 +86,7 @@ namespace WebApplication
 
                     anUser = EntityDTOHelper.MapToEntity<UserDTO, User>(userDTO, anUser);
 
+                    anUser.LastUpdated = DateTime.Now;
                     craveatsDbContext.SaveChanges();
                 }
             }

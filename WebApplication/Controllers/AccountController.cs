@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Net.Mail;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
@@ -111,11 +114,27 @@ namespace WebApplication.Controllers
 
                         ceUserManager.SaveUserDetail(userDTO);
 
+                        StringBuilder sbSubject = new StringBuilder("Craveats new registrant notification"),
+                            sbEmailBody = new StringBuilder("<p>A new user with the following detail has been registered in the system. " +
+                            $"<br/><em>FirstName            </em>: {model.FirstName}" +
+                            $"<br/><em>Surname              </em>: {model.Surname}" +
+                            $"<br/><em>Email                </em>: {model.Email}" +
+                            $"<br/><em>Registration Type    </em>: {model.Role}" +
+                            "</p><p>Thank you.</p><p>Craveats</p>");
+
+                            CommunicationServiceProvider.SendOutgoingNotification(
+                                new MailAddress(
+                                    model.Email,
+                                    string.Format("{0}{1}{2}", model.FirstName, " ", model?.Surname).Trim()),
+                                sbSubject.ToString(),
+                                sbEmailBody.ToString());
+
                         using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
                         {
                             var result = craveatsDbContext.User.FirstOrDefault(u=> (u.UserStatus.HasValue && 
                                 new List<int> { (int)UserStatusEnum.Active, (int)UserStatusEnum.Blocked}.Contains(u.UserStatus.Value) && 
                                 (u.EmailAddress == model.Email)));
+
                             if (result!=null)
                             {
                                 userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(result);
@@ -213,16 +232,6 @@ namespace WebApplication.Controllers
 
                 using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
                 {
-                    //byte[] baLeft = new byte[4], 
-                    //    baRight = new byte[4];
-                    //RandomNumberGenerator rngInstance = RandomNumberGenerator.Create();
-                    //rngInstance.GetBytes(baLeft);
-                    //rngInstance.GetBytes(baRight);
-
-                    //string left = BitConverter.ToString(baLeft).Replace("-", ""),
-                    //    right = BitConverter.ToString(baRight).Replace("-", ""),
-                    //    tempHashText = new SHA1HashProvider().HashSHA1(model.Password + left + right),
-                    //    finalBlock = left + tempHashText + right;
                     CEUserManager ceUserManager = new CEUserManager();
                     SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
                     User anActiveOrBlockedUser = ceUserManager.GetSigningUserByEmail(model.Email);
@@ -381,33 +390,63 @@ namespace WebApplication.Controllers
             return View();
         }
 
-        ////
-        //// POST: /Account/ForgotPassword
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> ForgotPassword(ForgotPasswordViewModel model)
-        //{
-        //    if (ModelState.IsValid)
-        //    {
-        //        var user = await UserManager.FindByNameAsync(model.Email);
-        //        if (user == null || !(await UserManager.IsEmailConfirmedAsync(user.Id)))
-        //        {
-        //            // Don't reveal that the user does not exist or is not confirmed
-        //            return View("ForgotPasswordConfirmation");
-        //        }
+        //
+        // POST: /Account/ForgotPassword
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                User anActiveOrBlockedUser = null;
+                CEUserManager ceUserManager = new CEUserManager();
+                anActiveOrBlockedUser = ceUserManager.GetSigningUserByEmail(model.Email);
 
-        //        // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
-        //        // Send an email with this link
-        //        // string code = await UserManager.GeneratePasswordResetTokenAsync(user.Id);
-        //        // var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: Request.Url.Scheme);		
-        //        // await UserManager.SendEmailAsync(user.Id, "Reset Password", "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a>");
-        //        // return RedirectToAction("ForgotPasswordConfirmation", "Account");
-        //    }
+                if (anActiveOrBlockedUser == null)
+                {
+                    // Don't reveal that the user does not exist or is not confirmed
+                    return View("ForgotPasswordConfirmation");
+                }
 
-        //    // If we got this far, something failed, redisplay form
-        //    return View(model);
-        //}
+                // For more information on how to enable account confirmation and password reset please visit https://go.microsoft.com/fwlink/?LinkID=320771
+                // Send an email with this link
+                string longTicks = DateTime.Now.Ticks.ToString(), 
+                    code = DataSecurityTripleDES.GetEncryptedText(longTicks);
+
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    User anUser = craveatsDbContext.User.First(u => u.Id == anActiveOrBlockedUser.Id);
+
+                    anUser.ResetCode = longTicks;
+                    anUser.ResetCodeExpiry = DateTime.Now.AddDays(1);
+                    anUser.ResetCodeSentAt = DateTime.Now;
+
+                    anUser.LastUpdated = DateTime.Now;
+
+                    craveatsDbContext.SaveChanges();
+                }
+
+                var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = DataSecurityTripleDES.GetEncryptedText(anActiveOrBlockedUser.Id), code = code }, protocol: Request.Url.Scheme);
+
+                StringBuilder sbSubject = new StringBuilder("Craveats reset password request"), 
+                    sbEmailBody = new StringBuilder("<p>Dear [FullName],</p><p>We have received a request that you would like to reset your account password with us." + 
+                    "Please reset your password by clicking <a href=\"" + callbackUrl + "\">here</a></p><p>Thank you.</p><p>Craveats</p>");
+
+                CommunicationServiceProvider.SendOutgoingNotification(
+                    new MailAddress(
+                        anActiveOrBlockedUser.EmailAddress, 
+                        string.Format("{0}{1}{2}", anActiveOrBlockedUser?.FirstName, " ", anActiveOrBlockedUser?.Surname).Trim()),
+                    sbSubject.ToString(),
+                    sbEmailBody.Replace("[FullName]",
+                        string.Format("{0}{1}{2}", anActiveOrBlockedUser?.FirstName, " ", anActiveOrBlockedUser?.Surname).Trim()).ToString());
+
+                return RedirectToAction("ForgotPasswordConfirmation", "Account");
+            }
+
+            // If we got this far, something failed, redisplay form
+            return View(model);
+        }
 
         //
         // GET: /Account/ForgotPasswordConfirmation
@@ -420,36 +459,58 @@ namespace WebApplication.Controllers
         //
         // GET: /Account/ResetPassword
         [AllowAnonymous, Tls]
-        public ActionResult ResetPassword(string code)
+        public ActionResult ResetPassword(string code, string userId)
         {
-            return code == null ? View("Error") : View();
+
+            return (code == null || userId == null) 
+                ? View("Error") : View();
+            
         }
 
-        ////
-        //// POST: /Account/ResetPassword
-        //[HttpPost]
-        //[AllowAnonymous]
-        //[ValidateAntiForgeryToken]
-        //public async Task<ActionResult> ResetPassword(ResetPasswordViewModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return View(model);
-        //    }
-        //    var user = await UserManager.FindByNameAsync(model.Email);
-        //    if (user == null)
-        //    {
-        //        // Don't reveal that the user does not exist
-        //        return RedirectToAction("ResetPasswordConfirmation", "Account");
-        //    }
-        //    var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
-        //    if (result.Succeeded)
-        //    {
-        //        return RedirectToAction("ResetPasswordConfirmation", "Account");
-        //    }
-        //    AddErrors(result);
-        //    return View();
-        //}
+        //
+        // POST: /Account/ResetPassword
+        [HttpPost, Tls]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public ActionResult ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            User anActiveOrBlockedUser = null;
+            CEUserManager ceUserManager = new CEUserManager();
+            int userIDFromRequest = 0;
+            string plainCode = null, errorInTranslation = string.Empty;
+
+            try
+            {
+                userIDFromRequest = int.Parse(DataSecurityTripleDES.GetPlainText(model.UserId));
+                plainCode = DataSecurityTripleDES.GetPlainText(model.Code);
+            
+                DateTime minExpiry = DateTime.Now;
+
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    anActiveOrBlockedUser = craveatsDbContext.User.First(u => u.Id == userIDFromRequest && u.ResetCode == plainCode && (!u.ResetCodeExpiry.HasValue || u.ResetCodeExpiry >= minExpiry));
+                    anActiveOrBlockedUser.ResetCodeExpiry = DateTime.Now;
+                    anActiveOrBlockedUser.ResetCode = null;
+
+                    anActiveOrBlockedUser.Password = new SHA1HashProvider().SecureSHA1(model.Password.Trim());
+
+                    anActiveOrBlockedUser.LastUpdated = DateTime.Now;
+
+                    craveatsDbContext.SaveChanges();
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+            }
+
+            return RedirectToAction("ResetPasswordConfirmation", "Account");
+        }
 
         //
         // GET: /Account/ResetPasswordConfirmation

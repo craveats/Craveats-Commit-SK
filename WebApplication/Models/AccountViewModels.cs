@@ -47,6 +47,7 @@ namespace WebApplication.Models
     {
         [Required]
         [Display(Name = "Email")]
+        [EmailAddress]
         public string Email { get; set; }
     }
 
@@ -85,6 +86,8 @@ namespace WebApplication.Models
         public string ConfirmPassword { get; set; }
 
         public string Code { get; set; }
+
+        public string UserId { get; set; }
     }
 
     public class ForgotPasswordViewModel
