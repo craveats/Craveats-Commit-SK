@@ -27,8 +27,10 @@ namespace WebApplication.Models.ViewModel
                             PropertyInfo uProp = uProps.FirstOrDefault(u => u.Name == propertyInfo.Name && u.CanWrite);
                             if (uProp != null)
                             {
-                                if (!(propertyInfo.Name.ToLower().EndsWith("id") &&
-                                    propertyInfo.PropertyType == typeof(System.Int32)))
+                                if (!(propertyInfo.Name.ToLower().EndsWith("id") && 
+                                    ((propertyInfo.PropertyType == typeof(System.Int32)) || 
+                                    ((propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) && 
+                                    Nullable.GetUnderlyingType(propertyInfo.PropertyType) == typeof(System.Int32)))))
                                 {
                                     uProp.SetValue(uDTO, propertyInfo.GetValue(t, null));
                                 }
@@ -151,4 +153,42 @@ namespace WebApplication.Models.ViewModel
         public string AddressId { get; set; }
         public string ProfileAssetUrl { get; set; }
     }
+
+    [Serializable]
+    public class AddressDTO
+    {
+        public string Id { get; set; }
+        public string Line1 { get; set; }
+        public string Line2 { get; set; }
+        public string City { get; set; }
+        public Nullable<int> RegionId { get; set; }
+        public string Postcode { get; set; }
+        public Nullable<int> CountryId { get; set; }
+        public Nullable<int> OwnerType { get; set; }
+        public Nullable<int> OwnerId { get; set; }
+        public Nullable<int> AddressStatus { get; set; }
+
+        public string RegionAlias { get; set; }
+        public string RegionName { get; set; }
+
+        public string CountryName { get; set; }
+    }
+
+    [Serializable]
+    public class RegionDTO
+    {
+        public string Id { get; set; }
+        public string RegionName { get; set; }
+        public string CountryISO2 { get; set; }
+        public string RegionAlias { get; set; }
+    }
+
+    [Serializable]
+    public class Country
+    {
+        public string ISO2 { get; set; }
+        public string Name { get; set; }
+        public string Id { get; set; }
+    }
+
 }

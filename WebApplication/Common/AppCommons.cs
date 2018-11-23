@@ -40,6 +40,8 @@
     {
         Unknown = 0,
         User = 1,
+        ServiceProvider = 2,
+        Vendor = 3
     }
 
     internal enum ServiceStatusEnum
@@ -59,7 +61,7 @@
     }
 
     [Flags]
-    internal enum UserTypeEnum
+    public enum UserTypeEnum
     {
         /// <summary>
         /// Unspecified 

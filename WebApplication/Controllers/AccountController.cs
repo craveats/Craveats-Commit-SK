@@ -26,6 +26,8 @@ namespace WebApplication.Controllers
     //[Authorize]
     public class AccountController : Controller
     {
+        CEUserManager ceUserManager = new CEUserManager();
+
         public AccountController()
         {
             //SessionManager.RegisterSessionActivity();
@@ -95,10 +97,7 @@ namespace WebApplication.Controllers
             // redirect user to the "Done" page, and pass the user object along via Session
             if (ModelState.IsValid)
             {
-                CEUserManager ceUserManager = new CEUserManager();
                 SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
-                
-
                 if (!ceUserManager.IsRegistered(model.Email))
                 {
                     string sha1HashText = sHA1HashProvider.SecureSHA1(model.Password.Trim());
@@ -129,25 +128,24 @@ namespace WebApplication.Controllers
                                 sbSubject.ToString(),
                                 sbEmailBody.ToString());
 
-                        using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                        User result = ceUserManager.FindByCriteria(email: model.Email, userStatusEnums: new List<int> { (int)UserStatusEnum.Active, (int)UserStatusEnum.Blocked });
+                        if (result != null)
                         {
-                            var result = craveatsDbContext.User.FirstOrDefault(u=> (u.UserStatus.HasValue && 
-                                new List<int> { (int)UserStatusEnum.Active, (int)UserStatusEnum.Blocked}.Contains(u.UserStatus.Value) && 
-                                (u.EmailAddress == model.Email)));
+                            userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(result);
 
-                            if (result!=null)
-                            {
-                                userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(result);
-                                AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
-                                Session["loggeduser"] = authenticatedUserInfo;
+                            AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
+                            Session["loggeduser"] = authenticatedUserInfo;
 
-                                SessionManager.RegisterSessionActivity(userID: result.Id, loggedInAt: DateTime.Now);
+                            SessionManager.RegisterSessionActivity(userID: result.Id, loggedInAt: DateTime.Now);
 
-                                this.SignInUser(string.Format("{0}", authenticatedUserInfo.FullName), false);
-                            }
+                            ceUserManager.SignInUser(HttpContext, string.Format("{0}", authenticatedUserInfo.FullName), false);
+
+                            return RedirectToAction("Index", "Home");
                         }
-
-                        return RedirectToAction("Index", "Home");
+                        else
+                        {
+                            ModelState.AddModelError(string.Empty, "An error occurred in reading user data. Please review input and re-try.");
+                        }
                     }
                     else
                     {
@@ -230,23 +228,22 @@ namespace WebApplication.Controllers
                     return View(model);
                 }
 
-                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                CEUserManager ceUserManager = new CEUserManager();
+                SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
+                User anActiveOrBlockedUser = ceUserManager.GetSigningUserByEmail(model.Email);
+
+                if (anActiveOrBlockedUser != null && sHA1HashProvider.CheckHashSHA1(model.Password, anActiveOrBlockedUser.Password, 8))
                 {
-                    CEUserManager ceUserManager = new CEUserManager();
-                    SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
-                    User anActiveOrBlockedUser = ceUserManager.GetSigningUserByEmail(model.Email);
-                    if (anActiveOrBlockedUser != null && sHA1HashProvider.CheckHashSHA1(model.Password, anActiveOrBlockedUser.Password, 8))
-                    {
-                        UserDTO userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(anActiveOrBlockedUser);
-                        AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
-                        Session["loggeduser"] = authenticatedUserInfo;
+                    UserDTO userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(anActiveOrBlockedUser);
+                    AuthenticatedUserInfo authenticatedUserInfo = new AuthenticatedUserInfo(userDTO);
 
-                        SessionManager.RegisterSessionActivity(loggedInAt: DateTime.Now);
+                    ceUserManager.SignInUser(HttpContext, string.Format("{0}", authenticatedUserInfo.FullName), false);
 
-                        this.SignInUser(string.Format("{0}", authenticatedUserInfo.FullName), false);
+                    Session["loggeduser"] = authenticatedUserInfo;
 
-                        return this.RedirectToLocal(returnUrl);
-                    }
+                    SessionManager.RegisterSessionActivity(loggedInAt: DateTime.Now);
+
+                    return this.RedirectToLocal(returnUrl);
                 }
 
                 ModelState.AddModelError(string.Empty, "Login attempt failed.");
@@ -267,11 +264,7 @@ namespace WebApplication.Controllers
             //AuthenticationManager.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
             try
             {
-                // Setting.    
-                var ctx = Request.GetOwinContext();
-                var authenticationManager = ctx.Authentication;
-                // Sign Out.    
-                authenticationManager.SignOut();
+                new CEUserManager().SignOut(HttpContext);
 
                 SessionManager.RegisterSessionActivity(loggedOffAt: DateTime.Now);
 
@@ -665,33 +658,7 @@ namespace WebApplication.Controllers
         }
 
         #region Helpers
-        #region Sign In method.    
-        /// <summary>  
-        /// Sign In User method.    
-        /// </summary>  
-        /// <param name="username">Username parameter.</param>  
-        /// <param name="isPersistent">Is persistent parameter.</param>  
-        private void SignInUser(string username, bool isPersistent)
-        {
-            // Initialization.    
-            var claims = new List<Claim>();
-            try
-            {
-                // Setting    
-                claims.Add(new Claim(ClaimTypes.Name, username));
-                var claimIdenties = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
-                var ctx = Request.GetOwinContext();
-                var authenticationManager = ctx.Authentication;
-                // Sign In.    
-                authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, claimIdenties);
-            }
-            catch (Exception ex)
-            {
-                // Info    
-                throw ex;
-            }
-        }
-        #endregion
+        
         // Used for XSRF protection when adding external logins
         private const string XsrfKey = "XsrfId";
 

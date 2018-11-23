@@ -1,14 +1,21 @@
-﻿using Generic.Obfuscation.TripleDES;
+﻿using Generic.Obfuscation.SHA1;
+using Generic.Obfuscation.TripleDES;
+using Microsoft.AspNet.Identity;
+using Microsoft.Owin.Security;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Common;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.SessionState;
+using WebApplication.Common;
 using WebApplication.DAL;
 using WebApplication.DAL.DBCommon;
 using WebApplication.Models;
@@ -70,9 +77,53 @@ namespace WebApplication
                     return newUser?.Id;
                 }
             }
-            catch (Exception e){
+            catch (Exception e) {
                 throw e;
             }
+        }
+
+        internal async Task<UserDTO> FindByIdAsync(int loggedUserId)
+        {
+            UserDTO userDTO = null;
+            try
+            {
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    User user = await craveatsDbContext.User.FindAsync(loggedUserId);
+                    userDTO = EntityDTOHelper.GetEntityDTO<User, UserDTO>(user);
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+            }
+            return userDTO;
+        }
+
+        internal async Task<IdentityResult> ChangePasswordAsync(int loggedUserId, string oldPassword, string newPassword)
+        {
+            bool returnSuccess = false;
+            try
+            {
+                SHA1HashProvider sHA1HashProvider = new SHA1HashProvider();
+
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext()) {
+                    User thisUser = craveatsDbContext.User.FirstOrDefault(u => u.Id == loggedUserId);
+                    if (thisUser != null && sHA1HashProvider.CheckHashSHA1(oldPassword, thisUser.Password, 8)) {
+
+                        thisUser.Password = sHA1HashProvider.SecureSHA1(newPassword);
+                        thisUser.LastUpdated = DateTime.Now;
+
+                        await craveatsDbContext.SaveChangesAsync();
+                        returnSuccess = true;
+                    }
+                }
+            }
+            catch (Exception e) {
+                Trace.WriteLine(e);
+            }
+
+            return returnSuccess ? IdentityResult.Success : IdentityResult.Failed("Change password failed");
         }
 
         internal void SaveUserDetail(UserDTO userDTO)
@@ -94,6 +145,11 @@ namespace WebApplication
             {
                 throw e;
             }
+        }
+
+        internal object AddPasswordAsync(string v, string newPassword)
+        {
+            throw new NotImplementedException();
         }
 
         public User GetSigningUserByEmail(string emailAddress)
@@ -124,6 +180,88 @@ namespace WebApplication
             catch (Exception e) {
                 throw e;
             }
+        }
+
+        internal List<User> FindAllByCriteria(string email, List<int> userStatusEnums = null, UserTypeEnum? userTypeEnums = null)
+        {
+            List<User> result = null;
+
+            userStatusEnums = (userStatusEnums == null || userStatusEnums.Count == 0) 
+                ? new List<int> { (int) UserStatusEnum.Active, (int) UserStatusEnum.Blocked } 
+                : userStatusEnums;
+
+            try
+            {
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    result = craveatsDbContext.User.Where(u => (u.UserStatus.HasValue &&
+                        userStatusEnums.Contains(u.UserStatus.Value) &&
+                        (userTypeEnums == null || userTypeEnums.Value.HasFlag((UserTypeEnum)u.UserTypeFlag)) &&
+                        (u.EmailAddress == email))).OrderBy(u=>u.UserStatus).ThenBy(v=>v.Id).ToList();
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            return result;
+        }
+
+        internal User FindByCriteria(string email, List<int> userStatusEnums = null, UserTypeEnum? userTypeEnums = null)
+        {
+            User result = null;
+
+            userStatusEnums = (userStatusEnums == null || userStatusEnums.Count == 0)
+                ? new List<int> { (int)UserStatusEnum.Active, (int)UserStatusEnum.Blocked }
+                : userStatusEnums;
+
+            try
+            {
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    result = craveatsDbContext.User.Where(u => (u.UserStatus.HasValue &&
+                        userStatusEnums.Contains(u.UserStatus.Value) &&
+                        (userTypeEnums == null || userTypeEnums.Value.HasFlag((UserTypeEnum)u.UserTypeFlag)) &&
+                        (u.EmailAddress == email))).OrderBy(u => u.UserStatus).ThenBy(v => v.Id).FirstOrDefault();
+                }
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+            return result;
+        }
+
+        public User FindById(int id)
+        {
+            User user = null;
+            try
+            {
+                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
+                {
+                    user = craveatsDbContext.User.Find(id);
+                }
+            }
+            catch (Exception e)
+            {
+                Trace.WriteLine(e);
+            }
+            return user;
+
+        }
+
+        public bool FindByIdAndCheckIfPasswordIsMissing(int loggedUserId) {
+            return FindById(loggedUserId)?.Password?.Length > 0 ? false : true;
+        }
+
+        public bool FindByIdAndCheckIfContactNumberIsMissing(int loggedUserId)
+        {
+            return FindById(loggedUserId)?.ContactNumber?.Length > 0 ? false : true;
+        }
+
+        public string FindByIdAndGetContactNumber(int loggedUserId)
+        {
+            return FindById(loggedUserId)?.ContactNumber;
         }
 
         //public static bool RegisterSessionActivity(int? userID = null, DateTime? loggedInAt = null, DateTime? loggedOffAt = null)
@@ -181,7 +319,70 @@ namespace WebApplication
         //}
 
 
+        #region Sign In and Out method.    
+        internal async Task<IdentityResult> SignIn(string username, bool isPersistent, bool rememberBrowser)
+        {
+            // Initialization.    
+            var claims = new List<Claim>();
+            try
+            {
+                if (username != null)
+                {
+                    // Setting    
+                    claims.Add(new Claim(ClaimTypes.Name, username));
+                    var claimIdenties = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+                    var ctx = HttpContext.Current.Request.GetOwinContext();
+                    var authenticationManager = ctx.Authentication;
+                    // Sign In.    
+                    authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, claimIdenties);
 
+                    return IdentityResult.Success;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Info    
+                throw ex;
+            }
+            return IdentityResult.Failed("Signin failed");
+        }
+
+        /// <summary>  
+        /// Sign In User method.    
+        /// </summary>  
+        /// <param name="username">Username parameter.</param>  
+        /// <param name="isPersistent">Is persistent parameter.</param>  
+        internal void SignInUser(HttpContextBase context, string username, bool isPersistent)
+        {
+            // Initialization.    
+            var claims = new List<Claim>();
+            try
+            {
+                // Setting    
+                claims.Add(new Claim(ClaimTypes.Name, username));
+                var claimIdenties = new ClaimsIdentity(claims, DefaultAuthenticationTypes.ApplicationCookie);
+                var ctx = context.Request.GetOwinContext();
+                var authenticationManager = ctx.Authentication;
+                // Sign In.    
+                authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = isPersistent }, claimIdenties);
+            }
+            catch (Exception ex)
+            {
+                // Info    
+                throw ex;
+            }
+        }
+
+        internal void SignOut(HttpContextBase context)
+        {
+            // Setting.    
+            var ctx = context.Request.GetOwinContext();
+            var authenticationManager = ctx.Authentication;
+            // Sign Out.    
+            authenticationManager.SignOut();
+        }
+
+        #endregion
 
     }
 }
