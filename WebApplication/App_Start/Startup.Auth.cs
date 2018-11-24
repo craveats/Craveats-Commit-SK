@@ -28,7 +28,7 @@ namespace WebApplication
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
-                LoginPath = new PathString("/Account/Login"),
+                LoginPath = new PathString("/Login/Login"),
                 LogoutPath = new PathString("/Account/Logoff"),
                 ExpireTimeSpan = TimeSpan.FromMinutes(5)
             });            
@@ -60,6 +60,7 @@ namespace WebApplication
             //    ClientId = "",
             //    ClientSecret = ""
             //});
+
         }
     }
 }

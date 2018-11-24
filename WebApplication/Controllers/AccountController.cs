@@ -16,6 +16,7 @@ using Generic.Obfuscation.TripleDES;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin.Security;
+using WebApplication.BLL;
 using WebApplication.Common;
 using WebApplication.DAL;
 using WebApplication.Models;
@@ -23,7 +24,7 @@ using WebApplication.Models.ViewModel;
 
 namespace WebApplication.Controllers
 {
-    //[Authorize]
+    [Authorize, Tls]
     public class AccountController : Controller
     {
         CEUserManager ceUserManager = new CEUserManager();
@@ -40,7 +41,7 @@ namespace WebApplication.Controllers
         {
             var roles = GetAllRoles();
             var model = new RegisterViewModel();
-            model.Roles = GetSelectListItems(roles);
+            model.Roles = GenUtil.GetSelectListItems(roles);
             return View(model);
         }
 
@@ -51,32 +52,7 @@ namespace WebApplication.Controllers
             };
         }
 
-        // src:: https://nimblegecko.com/using-simple-drop-down-lists-in-ASP-NET-MVC/
-        // visited :: 2018 11 18
-        // This is one of the most important parts in the whole example.
-        // This function takes a list of strings and returns a list of SelectListItem objects.
-        // These objects are going to be used later in the SignUp.html template to render the
-        // DropDownList.
-        private IEnumerable<SelectListItem> GetSelectListItems(IEnumerable<string> elements)
-        {
-            // Create an empty list to hold result of the operation
-            var selectList = new List<SelectListItem>();
-
-            // For each string in the 'elements' variable, create a new SelectListItem object
-            // that has both its Value and Text properties set to a particular value.
-            // This will result in MVC rendering each item as:
-            //     <option value="State Name">State Name</option>
-            foreach (var element in elements)
-            {
-                selectList.Add(new SelectListItem
-                {
-                    Value = element,
-                    Text = element
-                });
-            }
-
-            return selectList;
-        }
+        
 
         //
         // Action method for handling user-entered data when 'Role' button is pressed.
@@ -91,7 +67,7 @@ namespace WebApplication.Controllers
             // Set these states on the model. We need to do this because
             // only the selected value from the DropDownList is posted back, not the whole
             // list of states.
-            model.Roles = GetSelectListItems(roles);
+            model.Roles = GenUtil.GetSelectListItems(roles);
 
             // In case everything is fine - i.e. both "Name" and "State" are entered/selected,
             // redirect user to the "Done" page, and pass the user object along via Session
@@ -284,7 +260,7 @@ namespace WebApplication.Controllers
             {
                 throw e;
             }
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login", "Login");
         }
 
         ////

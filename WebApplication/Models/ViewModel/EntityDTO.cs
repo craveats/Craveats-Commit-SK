@@ -11,6 +11,7 @@ namespace WebApplication.Models.ViewModel
     {
         public static U GetEntityDTO<T, U>(T t)
         {
+            string sPropName = string.Empty, tPropName = string.Empty;
             try
             {
                 if (t != null)
@@ -25,8 +26,12 @@ namespace WebApplication.Models.ViewModel
                         if (propertyInfo.CanRead)
                         {
                             PropertyInfo uProp = uProps.FirstOrDefault(u => u.Name == propertyInfo.Name && u.CanWrite);
+
                             if (uProp != null)
                             {
+                                sPropName = $"T.{propertyInfo.Name}:{propertyInfo.PropertyType.Name}";
+                                tPropName = $"U.{uProp.Name}:{uProp.PropertyType.Name}";
+
                                 if (!(propertyInfo.Name.ToLower().EndsWith("id") && 
                                     ((propertyInfo.PropertyType == typeof(System.Int32)) || 
                                     ((propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) && 
@@ -37,9 +42,12 @@ namespace WebApplication.Models.ViewModel
                                 else
                                 {
                                     int? tPropVal = (int?)propertyInfo.GetValue(t, null);
+
                                     uProp.SetValue(
                                         uDTO,
-                                        DataSecurityTripleDES.GetEncryptedText(tPropVal.Value));
+                                        tPropVal == null 
+                                            ? null 
+                                            : DataSecurityTripleDES.GetEncryptedText(tPropVal.Value));
                                 }
                             }
                         }
@@ -52,6 +60,7 @@ namespace WebApplication.Models.ViewModel
             }
             catch (Exception e)
             {
+                string issueWith = $"{sPropName} -> {tPropName}";
                 throw e;
             }
         }
@@ -80,7 +89,9 @@ namespace WebApplication.Models.ViewModel
                                 if (uProp != null)
                                 {
                                     if (!(propertyInfo.Name.ToLower().EndsWith("id") &&
-                                        propertyInfo.PropertyType == typeof(System.Int32)))
+                                        ((propertyInfo.PropertyType == typeof(System.Int32)) ||
+                                        ((propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) &&
+                                        Nullable.GetUnderlyingType(propertyInfo.PropertyType) == typeof(System.Int32)))))
                                     {
                                         object objValue = uProp.GetValue(
                                             sourceDTO,
@@ -112,9 +123,19 @@ namespace WebApplication.Models.ViewModel
 
                                         if (objValue != null)
                                         {
-                                            propertyInfo.SetValue(targetEntity, 
-                                                Convert.ChangeType(objValue, 
-                                                propertyInfo.PropertyType));
+                                            if (((propertyInfo.PropertyType.IsGenericType &&
+                                                propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) &&
+                                                Nullable.GetUnderlyingType(propertyInfo.PropertyType) == typeof(System.Int32)))
+                                            {
+                                                propertyInfo.SetValue(targetEntity,
+                                                    (int?)int.Parse(objValue.ToString()));
+                                            }
+                                            else
+                                            {
+                                                propertyInfo.SetValue(targetEntity,
+                                                    Convert.ChangeType(objValue,
+                                                    propertyInfo.PropertyType));
+                                            }
                                         }
                                     }
                                 }
@@ -161,11 +182,11 @@ namespace WebApplication.Models.ViewModel
         public string Line1 { get; set; }
         public string Line2 { get; set; }
         public string City { get; set; }
-        public Nullable<int> RegionId { get; set; }
+        public string RegionId { get; set; }
         public string Postcode { get; set; }
-        public Nullable<int> CountryId { get; set; }
+        public string CountryId { get; set; }
         public Nullable<int> OwnerType { get; set; }
-        public Nullable<int> OwnerId { get; set; }
+        public string OwnerId { get; set; }
         public Nullable<int> AddressStatus { get; set; }
 
         public string RegionAlias { get; set; }
@@ -184,7 +205,7 @@ namespace WebApplication.Models.ViewModel
     }
 
     [Serializable]
-    public class Country
+    public class CountryDTO
     {
         public string ISO2 { get; set; }
         public string Name { get; set; }

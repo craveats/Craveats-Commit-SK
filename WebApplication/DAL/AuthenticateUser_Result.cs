@@ -11,7 +11,6 @@ namespace WebApplication.DAL
 {
     using System;
     
-    [Serializable]
     public partial class AuthenticateUser_Result
     {
         public int Id { get; set; }

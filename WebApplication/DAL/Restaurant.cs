@@ -12,19 +12,20 @@ namespace WebApplication.DAL
     using System;
     using System.Collections.Generic;
     
-    public partial class Service
+    public partial class Restaurant
     {
         public int Id { get; set; }
-        public Nullable<int> ServiceStatus { get; set; }
         public string Name { get; set; }
         public string Brief { get; set; }
         public string Detail { get; set; }
-        public Nullable<decimal> UnitPrice { get; set; }
-        public Nullable<bool> IsTaxable { get; set; }
-        public Nullable<decimal> TaxRate { get; set; }
+        public Nullable<int> AddressId { get; set; }
+        public string ContactNumber { get; set; }
+        public string EmailAddress { get; set; }
+        public Nullable<int> ServiceProviderStatus { get; set; }
         public string AssetUrl { get; set; }
-        public Nullable<int> OwnerType { get; set; }
-        public Nullable<int> OwnerId { get; set; }
+        public Nullable<int> PartnerUserId { get; set; }
+        public Nullable<int> ReviewedBy { get; set; }
+        public Nullable<System.DateTime> ReviewDate { get; set; }
         public Nullable<System.DateTime> DateAdded { get; set; }
         public Nullable<System.DateTime> LastUpdated { get; set; }
     }

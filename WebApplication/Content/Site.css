@@ -23,5 +23,11 @@ textarea {
     max-width: 280px;
 }
 
+.brandBgImg {
+    background-image: url('images/CraveatsNewLogo_922x623.png');
+}
+
 /*Site background color*/
-.sitebg { background-color:/*#f96815*/#e5ecdc; }
+.sitebg {
+    background-color: /*#f96815*/ #e5ecdc;
+}

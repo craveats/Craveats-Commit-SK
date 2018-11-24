@@ -199,11 +199,14 @@
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="BLL\CEUserManager.cs" />
     <Compile Include="BLL\CommunicationManager.cs" />
+    <Compile Include="BLL\Custom.cs" />
+    <Compile Include="BLL\CustomFilters.cs" />
     <Compile Include="BLL\DataProvider.cs" />
     <Compile Include="Common\AppCommons.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HoldingPageController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\LoginController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\ProfileController.cs" />
     <Compile Include="DAL\Address.cs">
@@ -261,13 +264,13 @@
     <Compile Include="DAL\Region.cs">
       <DependentUpon>Craveats.tt</DependentUpon>
     </Compile>
+    <Compile Include="DAL\Restaurant.cs">
+      <DependentUpon>Craveats.tt</DependentUpon>
+    </Compile>
+    <Compile Include="DAL\RestaurantMenu.cs">
+      <DependentUpon>Craveats.tt</DependentUpon>
+    </Compile>
     <Compile Include="DAL\Search.cs">
-      <DependentUpon>Craveats.tt</DependentUpon>
-    </Compile>
-    <Compile Include="DAL\Service.cs">
-      <DependentUpon>Craveats.tt</DependentUpon>
-    </Compile>
-    <Compile Include="DAL\ServiceProvider.cs">
       <DependentUpon>Craveats.tt</DependentUpon>
     </Compile>
     <Compile Include="DAL\SessionTracking.cs">
@@ -304,18 +307,30 @@
     <Content Include="Content\images\CraveatsLogoNText_944x221.png" />
     <Content Include="Content\images\CraveatsNewLogo.ico" />
     <Content Include="Content\images\CraveatsNewLogo_138x136.png" />
+    <Content Include="Content\images\CraveatsNewLogo_922x623.png" />
     <Content Include="Content\images\CraveatsNewText_215x65.png" />
     <Content Include="Views\HoldingPage\HoldingProfile.cshtml" />
     <Content Include="Views\HoldingPage\HoldingMessages.cshtml" />
     <Content Include="Views\HoldingPage\HoldingOrders.cshtml" />
     <Content Include="Views\HoldingPage\HoldingCheckout.cshtml" />
-    <Content Include="Views\Profile\CreateAddress.cshtml" />
+    <Content Include="Views\Profile\AddAddress.cshtml" />
     <Content Include="Views\Profile\DetailAddress.cshtml" />
     <Content Include="Views\Profile\CraveatsDiner.cshtml" />
     <Content Include="Views\Profile\UserView.cshtml" />
     <Content Include="Views\Profile\PartnerRestaurant.cshtml" />
     <Content Include="Views\Profile\ProfileView.cshtml" />
     <Content Include="Views\Profile\Index.cshtml" />
+    <Content Include="Views\Profile\EditPartnerProfile.cshtml" />
+    <Content Include="Views\Shared\_NoNavLayout.cshtml" />
+    <Content Include="Views\Login\Login.cshtml" />
+    <Content Include="Views\Login\ForgotPassword.cshtml" />
+    <Content Include="Views\Login\ForgotPasswordConfirmation.cshtml" />
+    <Content Include="Views\Login\Register.cshtml" />
+    <Content Include="Views\Login\NotFound.cshtml" />
+    <Content Include="Views\Profile\EditDinerProfile.cshtml" />
+    <Content Include="Views\Login\ResetPassword.cshtml" />
+    <Content Include="Views\Login\ResetPasswordConfirmation.cshtml" />
+    <Content Include="Views\Profile\EditAddress.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap-readable.css" />

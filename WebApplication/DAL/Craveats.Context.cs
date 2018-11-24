@@ -39,12 +39,25 @@ namespace WebApplication.DAL
         public virtual DbSet<OrderPayment> OrderPayment { get; set; }
         public virtual DbSet<Region> Region { get; set; }
         public virtual DbSet<Search> Search { get; set; }
-        public virtual DbSet<Service> Service { get; set; }
-        public virtual DbSet<ServiceProvider> ServiceProvider { get; set; }
         public virtual DbSet<SessionTracking> SessionTracking { get; set; }
         public virtual DbSet<Settings> Settings { get; set; }
         public virtual DbSet<User> User { get; set; }
         public virtual DbSet<Vendor> Vendor { get; set; }
+        public virtual DbSet<Restaurant> Restaurant { get; set; }
+        public virtual DbSet<RestaurantMenu> RestaurantMenu { get; set; }
+    
+        public virtual ObjectResult<AuthenticateUser_Result> AuthenticateUser(string emailAddress, string password)
+        {
+            var emailAddressParameter = emailAddress != null ?
+                new ObjectParameter("emailAddress", emailAddress) :
+                new ObjectParameter("emailAddress", typeof(string));
+    
+            var passwordParameter = password != null ?
+                new ObjectParameter("password", password) :
+                new ObjectParameter("password", typeof(string));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<AuthenticateUser_Result>("AuthenticateUser", emailAddressParameter, passwordParameter);
+        }
     
         public virtual ObjectResult<Nullable<bool>> DoesRegistrantExist(string emailAddress)
         {

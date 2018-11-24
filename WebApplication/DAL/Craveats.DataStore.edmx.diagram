@@ -17,12 +17,12 @@
         <EntityTypeShape EntityType="Craveats.DataStoreModel.OrderPayment" Width="1.5" PointX="8.75" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.Region" Width="1.5" PointX="8.75" PointY="4.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.Search" Width="1.5" PointX="4.75" PointY="8.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="Craveats.DataStoreModel.Service" Width="1.5" PointX="6.75" PointY="8.75" IsExpanded="true" />
-        <EntityTypeShape EntityType="Craveats.DataStoreModel.ServiceProvider" Width="1.5" PointX="8.75" PointY="7.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.SessionTracking" Width="1.5" PointX="10.75" PointY="0.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.Settings" Width="1.5" PointX="10.75" PointY="4.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.User" Width="1.5" PointX="10.75" PointY="8.75" IsExpanded="true" />
         <EntityTypeShape EntityType="Craveats.DataStoreModel.Vendor" Width="1.5" PointX="0.75" PointY="11.75" IsExpanded="true" />
+        <EntityTypeShape EntityType="Craveats.DataStoreModel.Restaurant" Width="1.5" PointX="3.375" PointY="11.75" />
+        <EntityTypeShape EntityType="Craveats.DataStoreModel.RestaurantMenu" Width="1.5" PointX="13.375" PointY="0.75" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

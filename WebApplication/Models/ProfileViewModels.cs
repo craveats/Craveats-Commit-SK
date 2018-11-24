@@ -27,7 +27,7 @@ namespace WebApplication.Models
         [Display(Name = "Line 1")]
         public string Line1 { get; set; }
 
-        [StringLength(150, ErrorMessage = "Please enter your address line 1.", MinimumLength = 1)]
+        [StringLength(150, ErrorMessage = "Please enter your address line 2.", MinimumLength = 1)]
         [Display(Name = "Line 2")]
         public string Line2 { get; set; }
 
@@ -36,7 +36,7 @@ namespace WebApplication.Models
         [Display(Name = "City")]
         public string City { get; set; }
 
-        public IEnumerable<SelectListItem> RegionAliaes { get; set; }
+        public IEnumerable<SelectListItem> RegionAliases { get; set; }
 
         [Required]
         [Display(Name = "Province")]
@@ -54,11 +54,11 @@ namespace WebApplication.Models
         #region Non-editable 
         public string Id { get; set; }
 
-        [Required]
+        //[Required]
         [Display(Name = "Role")]
         public string Role { get; set; }
 
-        [Required]
+        //[Required]
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; }
@@ -77,6 +77,7 @@ namespace WebApplication.Models
 
         [Display(Name = "Contact number")]
         [DataType(DataType.PhoneNumber)]
+        [RegularExpression(@"^\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})$", ErrorMessage = "Invalid Phone number")]
         public string ContactNumber { get; set; }
         #endregion
 
