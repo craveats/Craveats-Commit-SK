@@ -5,14 +5,22 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h2>Address</h2>
+<h2>Add Address</h2>
 
 @using (Html.BeginForm("AddAddress", "Profile", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
 {
     @Html.AntiForgeryToken()
-
+    @Html.HiddenFor(m => m.OwnerId)
+    @Html.HiddenFor(m => m.OwnerType)
     <div class="form-horizontal">
-        <h4>Address</h4>
+        <h4>@{ 
+                if (ViewBag.AlterButtonTitle == true)
+                {
+                    "Restaurant".ToString();
+                }
+            }
+            Address
+            </h4>
         <hr />
         @Html.ValidationSummary(true, "", new { @class = "text-danger" })
         <div class="form-group">
@@ -67,7 +75,14 @@
 
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <input type="submit" value="Create" class="btn btn-default" />
+                @if (ViewBag.AlterButtonTitle == true)
+                {
+                    <input type="submit" value="Next" class="btn btn-default" />
+                }
+                else
+                {
+                    <input type="submit" value="Create" class="btn btn-default" />
+                }
             </div>
         </div>
     </div>

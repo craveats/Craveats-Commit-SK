@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Web;
 using System.Web.SessionState;
+using WebApplication.Common;
 using WebApplication.DAL;
 using WebApplication.DAL.DBCommon;
 using WebApplication.Models;
@@ -70,6 +71,27 @@ namespace WebApplication
             }
 
             return savedSessionTracking;
+        }
+
+        internal static UserTypeEnum GetContextSessionOwnerType()
+        {
+            object xLock = new object();
+            lock (xLock) {
+                AuthenticatedUserInfo authenticatedUserInfo = 
+                    HttpContext.Current.Session["loggeduser"] as AuthenticatedUserInfo;
+                return (UserTypeEnum)authenticatedUserInfo.UserRoleEnum;
+            }
+        }
+
+        internal static string GetContextSessionLoggedUserID()
+        {
+            object xLock = new object();
+            lock (xLock)
+            {
+                AuthenticatedUserInfo authenticatedUserInfo =
+                    HttpContext.Current.Session["loggeduser"] as AuthenticatedUserInfo;
+                return authenticatedUserInfo?.UserId;
+            }
         }
     }
 }

@@ -29,5 +29,11 @@ namespace WebApplication.Models
                 return _seed?.Id;// DataSecurityTripleDES.GetEncryptedText(_seed?.Id);
             }
         }
+
+        public int UserRoleEnum {
+            get {
+                return (_seed?.UserTypeFlag ?? (int?)Common.UserTypeEnum.Unspecified).Value;
+            }
+        }
     }
 }

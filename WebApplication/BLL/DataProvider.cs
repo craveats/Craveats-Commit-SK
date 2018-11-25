@@ -42,7 +42,7 @@ namespace WebApplication
             return result;
         }
 
-        public Region FindRegionById(int id)
+        public DAL.Region FindRegionById(int id)
         {
             Region result = null;
             try

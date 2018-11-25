@@ -256,6 +256,10 @@
         <Function Name="DoesRegistrantExist" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
           <Parameter Name="emailAddress" Type="varchar" Mode="In" />
         </Function>
+        <Function Name="GetMenuItem" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
+          <Parameter Name="searchterm" Type="varchar" Mode="In" />
+          <Parameter Name="orderby" Type="int" Mode="In" />
+        </Function>
         <Function Name="GetUserByEmail" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo">
           <Parameter Name="emailAddress" Type="varchar" Mode="In" />
         </Function>
@@ -523,6 +527,10 @@
           </FunctionImport>
           <EntitySet Name="Restaurant" EntityType="Craveats.DataStoreModel.Restaurant" />
           <EntitySet Name="RestaurantMenu" EntityType="Craveats.DataStoreModel.RestaurantMenu" />
+          <FunctionImport Name="GetMenuItem" ReturnType="Collection(Craveats.DataStoreModel.GetMenuItem_Result)">
+            <Parameter Name="searchterm" Mode="In" Type="String" />
+            <Parameter Name="orderby" Mode="In" Type="Int32" />
+          </FunctionImport>
         </EntityContainer>
         <ComplexType Name="AuthenticateUser_Result">
           <Property Type="Int32" Name="Id" Nullable="false" />
@@ -597,6 +605,21 @@
           <Property Name="DateAdded" Type="DateTime" Precision="3" />
           <Property Name="LastUpdated" Type="DateTime" Precision="3" />
         </EntityType>
+        <ComplexType Name="GetMenuItem_Result">
+          <Property Type="String" Name="Name" Nullable="true" MaxLength="255" />
+          <Property Type="String" Name="Detail" Nullable="true" MaxLength="2500" />
+          <Property Type="String" Name="Brief" Nullable="true" MaxLength="400" />
+          <Property Type="Int32" Name="Id" Nullable="false" />
+          <Property Type="Decimal" Name="UnitPrice" Nullable="true" Precision="18" Scale="2" />
+          <Property Type="Decimal" Name="TaxRate" Nullable="true" Precision="18" Scale="2" />
+          <Property Type="Boolean" Name="IsTaxable" Nullable="true" />
+          <Property Type="Int32" Name="r_id" Nullable="false" />
+          <Property Type="String" Name="r_name" Nullable="true" MaxLength="255" />
+          <Property Type="Int32" Name="ra_id" Nullable="false" />
+          <Property Type="String" Name="City" Nullable="true" MaxLength="255" />
+          <Property Type="Int32" Name="RegionId" Nullable="true" />
+          <Property Type="String" Name="Postcode" Nullable="true" MaxLength="50" />
+        </ComplexType>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -892,6 +915,25 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="GetMenuItem" FunctionName="Craveats.DataStoreModel.Store.GetMenuItem">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="Craveats.DataStoreModel.GetMenuItem_Result">
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="Detail" ColumnName="Detail" />
+                <ScalarProperty Name="Brief" ColumnName="Brief" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
+                <ScalarProperty Name="UnitPrice" ColumnName="UnitPrice" />
+                <ScalarProperty Name="TaxRate" ColumnName="TaxRate" />
+                <ScalarProperty Name="IsTaxable" ColumnName="IsTaxable" />
+                <ScalarProperty Name="r_id" ColumnName="r_id" />
+                <ScalarProperty Name="r_name" ColumnName="r_name" />
+                <ScalarProperty Name="ra_id" ColumnName="ra_id" />
+                <ScalarProperty Name="City" ColumnName="City" />
+                <ScalarProperty Name="RegionId" ColumnName="RegionId" />
+                <ScalarProperty Name="Postcode" ColumnName="Postcode" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
         </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>

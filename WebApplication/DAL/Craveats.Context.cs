@@ -76,5 +76,20 @@ namespace WebApplication.DAL
     
             return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetUserByEmail_Result>("GetUserByEmail", emailAddressParameter);
         }
+    
+        public virtual ObjectResult<GetMenuItem_Result> GetMenuItem(string searchterm, Nullable<int> orderby)
+        {
+            var searchtermParameter = searchterm != null ?
+                new ObjectParameter("searchterm", searchterm) :
+                new ObjectParameter("searchterm", typeof(string));
+    
+            var orderbyParameter = orderby.HasValue ?
+                new ObjectParameter("orderby", orderby) :
+                new ObjectParameter("orderby", typeof(int));
+    
+            return ((IObjectContextAdapter)this).ObjectContext.ExecuteFunction<GetMenuItem_Result>("GetMenuItem", searchtermParameter, orderbyParameter);
+        }
+
+        public System.Data.Entity.DbSet<WebApplication.DAL.GetMenuItem_Result> GetMenuItem_Result { get; set; }
     }
 }

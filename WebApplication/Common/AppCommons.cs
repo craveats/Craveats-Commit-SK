@@ -36,12 +36,13 @@
         Deleted = CommonStatusEnum.Deleted,
     }
 
-    internal enum OwnerTypeEnum
+    public enum OwnerTypeEnum
     {
         Unknown = 0,
         User = 1,
         ServiceProvider = 2,
-        Vendor = 3
+        Vendor = 3,
+        
     }
 
     internal enum ServiceStatusEnum

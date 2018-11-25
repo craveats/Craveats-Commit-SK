@@ -212,4 +212,23 @@ namespace WebApplication.Models.ViewModel
         public string Id { get; set; }
     }
 
+    [Serializable]
+    public class MixedBagDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Brief { get; set; }
+        public string Detail { get; set; }
+        public Nullable<decimal> UnitPrice { get; set; }
+        public Nullable<bool> IsTaxable { get; set; }
+        public Nullable<decimal> TaxRate { get; set; }
+
+        public int r_Id { get; set; }
+        public string r_Name { get; set; }
+
+        public int ra_Id { get; set; }
+        public string City { get; set; }
+        public Nullable<int> RegionId { get; set; }
+        public string Postcode { get; set; }
+    }
 }

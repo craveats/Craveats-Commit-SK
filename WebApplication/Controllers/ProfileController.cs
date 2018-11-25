@@ -5,9 +5,11 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using WebApplication.BLL;
+using WebApplication.DAL;
 using WebApplication.Common;
 using WebApplication.Models;
 using WebApplication.Models.ViewModel;
+using PagedList;
 
 namespace WebApplication.Controllers
 {
@@ -90,7 +92,7 @@ namespace WebApplication.Controllers
                             if (region != null)
                             {
                                 addressViewModel.RegionAlias = region.RegionAlias;
-                                addressViewModel.RegionID = DataSecurityTripleDES.GetEncryptedText(region.Id);
+                                addressViewModel.RegionId = DataSecurityTripleDES.GetEncryptedText(region.Id);
                             }
 
                             craveatsDinerViewModel.Addresses = new List<AddressViewModel>() { addressViewModel };
@@ -149,7 +151,7 @@ namespace WebApplication.Controllers
                         if (region != null)
                         {
                             addressViewModel.RegionAlias = region.RegionAlias;
-                            addressViewModel.RegionID = DataSecurityTripleDES.GetEncryptedText(region.Id);
+                            addressViewModel.RegionId = DataSecurityTripleDES.GetEncryptedText(region.Id);
                         }
 
                         partnerRestaurantViewModel.Addresses = new List<AddressViewModel>() { addressViewModel };
@@ -423,9 +425,15 @@ namespace WebApplication.Controllers
             return View("EditAddress", model);
         }
 
-        [HttpGet(), Route("Profile/AddAddress")]
-        public ActionResult AddAddress()
+        [HttpGet(), Route("Profile/AddAddress"), Route("Profile/AddAddress?ownerType={ownerType}&ownerId={ownerId}")]
+        public ActionResult AddAddress(string ownerType = null, string ownerId = null)
         {
+            if ((ownerType ?? string.Empty).Length > 0 && (ownerId ?? string.Empty).Length > 0)
+            {
+                ViewBag.AlterButtonTitle = true;
+                ViewBag.AlteredButtonName = "Next";
+            }
+            
             SessionManager.RegisterSessionActivity();
 
             if (Session != null && Session.Contents != null)
@@ -444,7 +452,9 @@ namespace WebApplication.Controllers
 
                         AddressViewModel addressViewModel = new AddressViewModel()
                         {
-                            RegionAliases = GenUtil.GetSelectListItems(regionAliases)
+                            RegionAliases = GenUtil.GetSelectListItems(regionAliases),
+                            OwnerId = ownerId,
+                            OwnerType = ownerType
                         };
 
                         return View("AddAddress", addressViewModel);
@@ -467,23 +477,35 @@ namespace WebApplication.Controllers
                 AuthenticatedUserInfo authenticatedUserInfo = Session["loggeduser"] as AuthenticatedUserInfo;
                 if (authenticatedUserInfo != null)
                 {
-                    DAL.User addressOwner = new CEUserManager().FindById(
-                        int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId)));
+                    int ownerType = model.OwnerType?.Length > 0
+                        ? int.Parse(DataSecurityTripleDES.GetPlainText(model.OwnerType))
+                        : -1;
 
-                    if (!addressOwner.AddressId.HasValue)
+                    int ownerId = model.OwnerId?.Length > 0
+                        ? int.Parse(DataSecurityTripleDES.GetPlainText(model.OwnerType))
+                        : -1;
+
+                    DAL.User addressOwner = null;
+                    if (!(ownerType > -1 && ownerId > 0))
                     {
-                        DataProvider dataProvider = new DataProvider();
+                        addressOwner = new CEUserManager().FindById(
+                            int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId)));
+                    }
 
-                        AddressDTO addressDTO = new AddressDTO()
-                        {
-                            City = model.City,
-                            Line1 = model.Line1,
-                            Line2 = model.Line2,
-                            Postcode = model.Postcode,
-                            RegionAlias = model.RegionAlias,
-                            OwnerType = (int?)Common.OwnerTypeEnum.User,
-                            OwnerId = authenticatedUserInfo.UserId
-                        };
+                    DataProvider dataProvider = new DataProvider();
+                    AddressDTO addressDTO = new AddressDTO()
+                    {
+                        City = model.City,
+                        Line1 = model.Line1,
+                        Line2 = model.Line2,
+                        Postcode = model.Postcode,
+                        RegionAlias = model.RegionAlias
+                    };
+
+                    if (addressOwner != null && !addressOwner.AddressId.HasValue)
+                    {
+                        addressDTO.OwnerType = (int?)Common.OwnerTypeEnum.User;
+                        addressDTO.OwnerId = authenticatedUserInfo.UserId;
 
                         using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
                         {
@@ -512,6 +534,41 @@ namespace WebApplication.Controllers
                             return RedirectToAction("ProfileView", "Profile");
                         }
                     }
+                    else if (ownerType > -1 && ownerId > 0) {
+                        addressDTO.OwnerType = ownerType;
+                        addressDTO.OwnerId = model.OwnerId;
+
+                        using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
+                        {
+                            addressDTO.RegionId = DataSecurityTripleDES.GetEncryptedText(
+                                c.Region.FirstOrDefault(r => r.CountryISO2 == "CA" &&
+                                    r.RegionAlias == addressDTO.RegionAlias).Id);
+
+                            addressDTO.CountryId = DataSecurityTripleDES.GetEncryptedText(
+                                c.Country.FirstOrDefault(s => s.ISO2 == "CA").Id);
+
+                            DAL.Address newAddress = EntityDTOHelper.MapToEntity<AddressDTO, DAL.Address>(
+                                addressDTO, null, true);
+                            newAddress.AddressStatus = (int?)Common.AddressStatusEnum.Active;
+
+                            c.Entry(newAddress).State = System.Data.Entity.EntityState.Added;
+
+                            c.SaveChanges();
+
+                            DAL.Restaurant restaurant = c.Restaurant.FirstOrDefault(u => u.Id == newAddress.OwnerId.Value);
+
+                            restaurant.AddressId = newAddress.Id;
+                            restaurant.LastUpdated = DateTime.Now;
+
+                            c.SaveChanges();
+
+                            return RedirectToAction("Index", "RestaurantMenu", new
+                            {
+                                ownerType = DataSecurityTripleDES.GetEncryptedText((int)Common.OwnerTypeEnum.ServiceProvider),
+                                ownerId = DataSecurityTripleDES.GetEncryptedText(restaurant.Id)
+                            });
+                        }
+                    }
                     ModelState.AddModelError("", "An address exists for this owner.");
                 }
             }
@@ -535,113 +592,5 @@ namespace WebApplication.Controllers
 
             return items;
         }
-
-
-        //public ActionResult Index()
-        //{
-        //    ProfileViewModel model = new ProfileViewModel();
-
-        //    if (Session != null && Session.Contents != null)
-        //    {
-        //        AuthenticatedUserInfo authenticatedUserInfo = Session["loggeduser"] as AuthenticatedUserInfo;
-
-        //        if (authenticatedUserInfo != null)
-        //        {
-        //            UserDTO userDTO = EntityDTOHelper.GetEntityDTO<DAL.User, UserDTO>(new CEUserManager().FindById(
-        //                int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId))));
-
-        //            model.ModelUserType = (Common.UserTypeEnum)userDTO.UserTypeFlag;
-
-        //            return View(model);
-        //        }
-        //    }
-
-        //    ModelState.AddModelError("Error", "Session has expired");
-        //    return View(model); 
-        //}
-
-        //IsPartnerRestaurant = FindIfIsPartnerRestaurant();
-
-        //private object FindIfIsPartnerRestaurant()
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        //public ActionResult DetailFromSessionDTO()
-        //{
-        //    if (Session != null && Session.Contents != null) {
-
-        //        AuthenticatedUserInfo authenticatedUserInfo = Session["loggeduser"] as AuthenticatedUserInfo;
-
-        //        if (authenticatedUserInfo != null) {
-        //            UserDTO userDTO = EntityDTOHelper.GetEntityDTO<DAL.User, UserDTO>(new CEUserManager().FindById(
-        //                int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId))));
-
-        //            PartnerRestaurantViewModel partnerRestaurantViewModel = null;
-        //            CraveatsDinerViewModel craveatsDinerViewModel = null;
-
-        //            if (((Common.UserTypeEnum)userDTO.UserTypeFlag).HasFlag(Common.UserTypeEnum.PartnerRestaurant)) {
-        //                partnerRestaurantViewModel = new PartnerRestaurantViewModel()
-        //                {
-        //                    Id = userDTO.Id,
-        //                    ContactNumber = userDTO.ContactNumber,
-        //                    Email = userDTO.EmailAddress,
-        //                    FirstName = userDTO.FirstName,
-        //                    Surname = userDTO.Surname,
-        //                    Role = Common.UserTypeEnum.PartnerRestaurant.ToString()
-        //                };
-        //            }
-        //            else {
-
-        //                craveatsDinerViewModel = new CraveatsDinerViewModel()
-        //                {
-        //                    Id = userDTO.Id,
-        //                    ContactNumber = userDTO.ContactNumber,
-        //                    Email = userDTO.EmailAddress,
-        //                    FirstName = userDTO.FirstName,
-        //                    Surname = userDTO.Surname,
-        //                    Role = Common.UserTypeEnum.PartnerRestaurant.ToString()
-        //                };
-        //            }
-
-        //            DataProvider dataProvider = new DataProvider();
-
-        //            DAL.Address anAddress = dataProvider.FindAddressById(
-        //                int.Parse(DataSecurityTripleDES.GetPlainText(userDTO.AddressId)));
-
-        //            AddressViewModel addressViewModel = EntityDTOHelper.GetEntityDTO<DAL.Address, AddressViewModel>(anAddress);
-
-        //            if (anAddress != null)
-        //            {
-        //                DAL.Region region = dataProvider.FindRegionById(anAddress.RegionId ?? 0);
-
-        //                if (region != null)
-        //                {
-        //                    addressViewModel.RegionAlias = region.RegionAlias;
-        //                    addressViewModel.RegionID = DataSecurityTripleDES.GetEncryptedText(region.Id);
-        //                }
-
-        //                if (((Common.UserTypeEnum)userDTO.UserTypeFlag).HasFlag(Common.UserTypeEnum.PartnerRestaurant))
-        //                {
-        //                    partnerRestaurantViewModel.Addresses = new List<AddressViewModel>() { addressViewModel };
-        //                }
-        //                else {
-        //                    craveatsDinerViewModel.Addresses = new List<AddressViewModel>() { addressViewModel };
-        //                }
-        //            }
-
-        //            if (((Common.UserTypeEnum)userDTO.UserTypeFlag).HasFlag(Common.UserTypeEnum.PartnerRestaurant))
-        //                return View(partnerRestaurantViewModel);
-        //            else
-        //                return View(craveatsDinerViewModel);
-        //        }
-
-        //    }
-
-        //    return View("Error");  
-        //}
-
-        //public ActionResult DetailFromSessionDTO()
-
     }
 }

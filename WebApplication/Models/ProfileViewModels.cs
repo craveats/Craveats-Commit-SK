@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Web.Mvc;
 using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
@@ -10,17 +11,21 @@ namespace WebApplication.Models
     public class ProfileViewModel
     {
         public Common.UserTypeEnum? ModelUserType { get; set; }
+
+        //public IQueryable<DAL.Restaurant> Restaurants { get; set; }
+
+        public PagedList.IPagedList<DAL.Restaurant> Restaurants { get; set; }
     }
 
     public class AddressViewModel
     {
         public string Id { get; set; }
 
-        public int OwnerType { get; set; }
+        public string OwnerType { get; set; }
 
-        public string OwnerID { get; set; }
+        public string OwnerId { get; set; }
 
-        public string RegionID { get; set; }
+        public string RegionId { get; set; }
 
         [Required]
         [StringLength(150, ErrorMessage = "Please enter your address line 1.", MinimumLength = 1)]
