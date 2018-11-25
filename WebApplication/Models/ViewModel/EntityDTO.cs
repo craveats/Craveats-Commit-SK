@@ -37,7 +37,21 @@ namespace WebApplication.Models.ViewModel
                                     ((propertyInfo.PropertyType.IsGenericType && propertyInfo.PropertyType.GetGenericTypeDefinition() == typeof(Nullable<>)) && 
                                     Nullable.GetUnderlyingType(propertyInfo.PropertyType) == typeof(System.Int32)))))
                                 {
-                                    uProp.SetValue(uDTO, propertyInfo.GetValue(t, null));
+                                    if (uProp.Name == "OwnerType" && (uProp.ReflectedType.FullName == "WebApplication.Models.AddressViewModelDTO" || 
+                                        uProp.ReflectedType.FullName == "WebApplication.Models.AddressViewModel"))
+                                    {
+                                        int? tPropVal = (int?)propertyInfo.GetValue(t, null);
+
+                                        uProp.SetValue(
+                                            uDTO,
+                                            tPropVal == null
+                                                ? null
+                                                : DataSecurityTripleDES.GetEncryptedText(tPropVal.Value)); 
+                                    }
+                                    else
+                                    {
+                                        uProp.SetValue(uDTO, propertyInfo.GetValue(t, null));
+                                    }
                                 }
                                 else
                                 {
@@ -185,7 +199,7 @@ namespace WebApplication.Models.ViewModel
         public string RegionId { get; set; }
         public string Postcode { get; set; }
         public string CountryId { get; set; }
-        public Nullable<int> OwnerType { get; set; }
+        public string OwnerType { get; set; }
         public string OwnerId { get; set; }
         public Nullable<int> AddressStatus { get; set; }
 

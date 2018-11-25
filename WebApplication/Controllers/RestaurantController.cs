@@ -60,7 +60,7 @@ namespace WebApplication.Controllers
                     break;
             }
 
-            int pageSize = 1;
+            int pageSize = 5;
             int pageNumber = (page ?? 1);
             return View(Restaurants.ToPagedList(pageNumber, pageSize));
         }

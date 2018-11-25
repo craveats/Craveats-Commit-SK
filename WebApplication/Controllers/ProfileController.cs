@@ -318,8 +318,6 @@ namespace WebApplication.Controllers
                     UserDTO userDTO = EntityDTOHelper.GetEntityDTO<DAL.User, UserDTO>(new CEUserManager().FindById(
                         int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId))));
 
-                    CraveatsDinerViewModel craveatsDinerViewModel = null;
-
                     if (((Common.UserTypeEnum)userDTO.UserTypeFlag).HasFlag(Common.UserTypeEnum.CraveatsDiner) ||
                         ((Common.UserTypeEnum)userDTO.UserTypeFlag).HasFlag(Common.UserTypeEnum.PartnerRestaurant))
                     {
@@ -504,7 +502,7 @@ namespace WebApplication.Controllers
 
                     if (addressOwner != null && !addressOwner.AddressId.HasValue)
                     {
-                        addressDTO.OwnerType = (int?)Common.OwnerTypeEnum.User;
+                        addressDTO.OwnerType = DataSecurityTripleDES.GetEncryptedText((int)Common.OwnerTypeEnum.User);
                         addressDTO.OwnerId = authenticatedUserInfo.UserId;
 
                         using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
@@ -535,7 +533,7 @@ namespace WebApplication.Controllers
                         }
                     }
                     else if (ownerType > -1 && ownerId > 0) {
-                        addressDTO.OwnerType = ownerType;
+                        addressDTO.OwnerType = DataSecurityTripleDES.GetEncryptedText(ownerType);
                         addressDTO.OwnerId = model.OwnerId;
 
                         using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
