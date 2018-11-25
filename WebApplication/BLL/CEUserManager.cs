@@ -182,31 +182,6 @@ namespace WebApplication
             }
         }
 
-        internal List<User> FindAllByCriteria(string email, List<int> userStatusEnums = null, UserTypeEnum? userTypeEnums = null)
-        {
-            List<User> result = null;
-
-            userStatusEnums = (userStatusEnums == null || userStatusEnums.Count == 0) 
-                ? new List<int> { (int) UserStatusEnum.Active, (int) UserStatusEnum.Blocked } 
-                : userStatusEnums;
-
-            try
-            {
-                using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
-                {
-                    result = craveatsDbContext.User.Where(u => (u.UserStatus.HasValue &&
-                        userStatusEnums.Contains(u.UserStatus.Value) &&
-                        (userTypeEnums == null || userTypeEnums.Value.HasFlag((UserTypeEnum)u.UserTypeFlag)) &&
-                        (u.EmailAddress == email))).OrderBy(u=>u.UserStatus).ThenBy(v=>v.Id).ToList();
-                }
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
-            return result;
-        }
-
         internal User FindByCriteria(string email, List<int> userStatusEnums = null, UserTypeEnum? userTypeEnums = null)
         {
             User result = null;
@@ -219,10 +194,19 @@ namespace WebApplication
             {
                 using (CraveatsDbContext craveatsDbContext = new CraveatsDbContext())
                 {
-                    result = craveatsDbContext.User.Where(u => (u.UserStatus.HasValue &&
+                    List<User> results = craveatsDbContext.User.Where(u => (u.UserStatus.HasValue &&
                         userStatusEnums.Contains(u.UserStatus.Value) &&
-                        (userTypeEnums == null || userTypeEnums.Value.HasFlag((UserTypeEnum)u.UserTypeFlag)) &&
-                        (u.EmailAddress == email))).OrderBy(u => u.UserStatus).ThenBy(v => v.Id).FirstOrDefault();
+                        (u.EmailAddress == email))).OrderBy(u => u.UserStatus).ThenBy(v => v.Id).ToList();
+
+                    result = results.Any() 
+                        ? (userTypeEnums == null) 
+                            ? results.FirstOrDefault()
+                            : results.Where(u => 
+                                u.UserTypeFlag.HasValue && 
+                                ((UserTypeEnum)u.UserTypeFlag.Value).HasFlag(
+                                    userTypeEnums.Value)).FirstOrDefault()
+                        : null
+                        ;
                 }
             }
             catch (Exception e)
