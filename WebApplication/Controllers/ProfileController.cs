@@ -71,7 +71,7 @@ namespace WebApplication.Controllers
                             Email = userDTO.EmailAddress,
                             FirstName = userDTO.FirstName,
                             Surname = userDTO.Surname,
-                            Role = Common.UserTypeEnum.PartnerRestaurant.ToString()
+                            Role = Common.UserTypeEnum.CraveatsDiner.GetDescription()
                         };
                     }
 
@@ -186,7 +186,7 @@ namespace WebApplication.Controllers
                             Email = userDTO.EmailAddress,
                             FirstName = userDTO.FirstName,
                             Surname = userDTO.Surname,
-                            Role = Common.UserTypeEnum.PartnerRestaurant.ToString()
+                            Role = Common.UserTypeEnum.PartnerRestaurant.GetDescription()
                         };
                     }
                     return View("EditPartnerProfile", partnerRestaurantViewModel);
@@ -464,47 +464,61 @@ namespace WebApplication.Controllers
 
             if (ModelState.IsValid)
             {
-
-                DataProvider dataProvider = new DataProvider();
-
-                DAL.Address address = dataProvider.FindAddressById(
-                     int.Parse(DataSecurityTripleDES.GetPlainText(model.Id)));
-
-                if (address != null)
+                AuthenticatedUserInfo authenticatedUserInfo = Session["loggeduser"] as AuthenticatedUserInfo;
+                if (authenticatedUserInfo != null)
                 {
-                    AddressDTO addressDTO = new AddressDTO()
+                    DAL.User addressOwner = new CEUserManager().FindById(
+                        int.Parse(DataSecurityTripleDES.GetPlainText(authenticatedUserInfo.UserId)));
+
+                    if (!addressOwner.AddressId.HasValue)
                     {
-                        Id = model.Id,
-                        City = model.City,
-                        Line1 = model.Line1,
-                        Line2 = model.Line2,
-                        Postcode = model.Postcode,
-                        RegionAlias = model.RegionAlias
-                    };
+                        DataProvider dataProvider = new DataProvider();
 
-                    using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
-                    {
+                        AddressDTO addressDTO = new AddressDTO()
+                        {
+                            City = model.City,
+                            Line1 = model.Line1,
+                            Line2 = model.Line2,
+                            Postcode = model.Postcode,
+                            RegionAlias = model.RegionAlias,
+                            OwnerType = (int?)Common.OwnerTypeEnum.User,
+                            OwnerId = authenticatedUserInfo.UserId
+                        };
 
-                        addressDTO.RegionId = DataSecurityTripleDES.GetEncryptedText(
-                            c.Region.FirstOrDefault(r => r.CountryISO2 == "CA" &&
-                                r.RegionAlias == addressDTO.RegionAlias).Id);
+                        using (DAL.CraveatsDbContext c = new DAL.CraveatsDbContext())
+                        {
+                            addressDTO.RegionId = DataSecurityTripleDES.GetEncryptedText(
+                                c.Region.FirstOrDefault(r => r.CountryISO2 == "CA" &&
+                                    r.RegionAlias == addressDTO.RegionAlias).Id);
 
-                        addressDTO.CountryId = DataSecurityTripleDES.GetEncryptedText(
-                            c.Country.FirstOrDefault(s => s.ISO2 == "CA").Id);
+                            addressDTO.CountryId = DataSecurityTripleDES.GetEncryptedText(
+                                c.Country.FirstOrDefault(s => s.ISO2 == "CA").Id);
 
-                        address = c.Address.FirstOrDefault(u => u.Id == address.Id);
-                        address = EntityDTOHelper.MapToEntity<AddressDTO, DAL.Address>(addressDTO, address);
+                            DAL.Address newAddress = EntityDTOHelper.MapToEntity<AddressDTO, DAL.Address>(
+                                addressDTO, null, true);
+                            newAddress.AddressStatus = (int?)Common.AddressStatusEnum.Active;
 
-                        c.SaveChanges();
+                            c.Entry(newAddress).State = System.Data.Entity.EntityState.Added;
 
-                        return RedirectToAction("ProfileView", "Profile");
+                            c.SaveChanges();
+
+                            addressOwner = c.User.FirstOrDefault(u => u.Id == newAddress.OwnerId.Value);
+
+                            addressOwner.AddressId = newAddress.Id;
+                            addressOwner.LastUpdated = DateTime.Now;
+
+                            c.SaveChanges();
+
+                            return RedirectToAction("ProfileView", "Profile");
+                        }
                     }
+                    ModelState.AddModelError("", "An address exists for this owner.");
                 }
             }
 
             // Something is not right - so render the registration page again,
             // keeping the data user has entered by supplying the model.
-            return View("EditAddress", model);
+            return View(model);
         }
 
         private IEnumerable<string> GetAllRegionAliases()

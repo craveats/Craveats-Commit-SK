@@ -32,16 +32,18 @@ namespace WebApplication
             {
                 Exception lastError = Server.GetLastError();
 
-                StringBuilder stringBuilder = new StringBuilder(GenUtil.GetExceptionStringForReporting(lastError));
-
                 if (!HttpContext.Current.IsDebuggingEnabled)
+                {
+                    StringBuilder stringBuilder = new StringBuilder(GenUtil.GetExceptionStringForReporting(lastError));
+
                     Server.ClearError();
 
-                CommunicationServiceProvider.SendAdminNotification(
-                    new System.Net.Mail.MailAddress("craveats@gmail.com", "Craveats Notification"),
-                    "An application error occurred.",
-                    stringBuilder.ToString()
-                    );
+                    CommunicationServiceProvider.SendAdminNotification(
+                        new System.Net.Mail.MailAddress("craveats@gmail.com", "Craveats Notification"),
+                        "An application error occurred.",
+                        stringBuilder.ToString()
+                        );
+                }
             }
             catch (Exception e)
             {
