@@ -15,6 +15,7 @@ using WebApplication.Models;
 
 namespace WebApplication.Controllers
 {
+    [Authorize, Tls]
     public class RestaurantMenuController : Controller
     {
         private CraveatsDbContext db = new CraveatsDbContext();

@@ -59,9 +59,9 @@
                  id = DataSecurityTripleDES.GetEncryptedText(item.OwnerId)*//*,
                  ownerType = DataSecurityTripleDES.GetEncryptedText((int)WebApplication.Common.OwnerTypeEnum.ServiceProvider),
                  ownerId = DataSecurityTripleDES.GetEncryptedText(item.Id)*/ /*}, null*/) |
-                    @Html.ActionLink("Edit", "Edit", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id) }) |
-                    @Html.ActionLink("Details", "Details", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id) }) |
-                    @Html.ActionLink("Delete", "Delete", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id) }) ]
+                    @Html.ActionLink("Edit", "Edit", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id), ownerType = ViewBag.ownerType, ownerId = ViewBag.ownerId }) |
+                    @Html.ActionLink("Details", "Details", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id), ownerType = ViewBag.ownerType, ownerId = ViewBag.ownerId }) |
+                    @Html.ActionLink("Delete", "Delete", new { id = DataSecurityTripleDES.GetEncryptedText(item.Id), ownerType = ViewBag.ownerType, ownerId = ViewBag.ownerId }) ]
                 </td>
             </tr>
         }

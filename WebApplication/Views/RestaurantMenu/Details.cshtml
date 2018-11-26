@@ -51,6 +51,6 @@
     </dl>
 </div>
 <p>
-    @Html.ActionLink("Edit", "Edit", new { id = DataSecurityTripleDES.GetEncryptedText(Model.Id), ownerType = ViewBag.ownerType, ownerId = ViewBag.ownerId }) |
-    @Html.ActionLink("Back to List", "Index")
+    @Html.ActionLink("Edit", "Edit", new { id = DataSecurityTripleDES.GetEncryptedText(Model.Id), ownerType = DataSecurityTripleDES.GetEncryptedText(Model.OwnerType), ownerId = DataSecurityTripleDES.GetEncryptedText(Model.OwnerId) }) |
+    @Html.ActionLink("Back to List", "Index", new { ownerType = DataSecurityTripleDES.GetEncryptedText(Model.OwnerType), ownerId = DataSecurityTripleDES.GetEncryptedText(Model.OwnerId) })
 </p>
