@@ -37,8 +37,22 @@ namespace WebApplication.Controllers
 
             ViewBag.CurrentFilter = searchString;
 
-            var Restaurants = from s in db.Restaurant
-                           select s;
+
+            Common.UserTypeEnum userTypeEnumFromSession = SessionManager.GetContextSessionOwnerType();
+
+            int? sessionLoggedUserId = int.Parse(DataSecurityTripleDES.GetPlainText(
+                SessionManager.GetContextSessionLoggedUserID()));
+            var Restaurants = (userTypeEnumFromSession == Common.UserTypeEnum.CraveatsAdmin) 
+                ? from s in db.Restaurant
+                  select s
+                : (userTypeEnumFromSession == Common.UserTypeEnum.PartnerRestaurant)
+                    ? from s in db.Restaurant
+                      where s.PartnerUserId == sessionLoggedUserId
+                      select s
+                    : from s in db.Restaurant
+                      where s.PartnerUserId == 0
+                      select s;
+
             if (!String.IsNullOrEmpty(searchString))
             {
                 Restaurants = Restaurants.Where(s => s.Name.Contains(searchString)
