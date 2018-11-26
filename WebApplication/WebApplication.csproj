@@ -352,6 +352,9 @@
     <Content Include="Views\Restaurant\Edit.cshtml" />
     <Content Include="Views\Restaurant\Delete.cshtml" />
     <Content Include="Views\Home\LocalMenuSearch.cshtml" />
+    <Content Include="Views\RestaurantMenu\Details.cshtml" />
+    <Content Include="Views\RestaurantMenu\Delete.cshtml" />
+    <Content Include="Views\RestaurantMenu\Edit.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap-readable.css" />

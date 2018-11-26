@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Mvc;
 using Generic.Obfuscation.TripleDES;
@@ -76,7 +77,7 @@ namespace WebApplication.Controllers
                     break;
             }
 
-            int pageSize = 5;
+            int pageSize = 25;
             int pageNumber = (page ?? 1);
             return View(RestaurantMenus.ToPagedList(pageNumber, pageSize));
         }
@@ -142,6 +143,112 @@ namespace WebApplication.Controllers
                 ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists see your system administrator.");
             }
             return View(restaurantMenu);
+        }
+
+        // GET: RestaurantMenu/Details/5
+        public ActionResult Details(string id, string ownerType = null, string ownerId = null)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            RestaurantMenu restaurantMenu = db.RestaurantMenu.Find(
+                int.Parse(DataSecurityTripleDES.GetPlainText(id)));
+
+            if (restaurantMenu == null)
+            {
+                return HttpNotFound();
+            }
+
+            return View(restaurantMenu);
+        }
+
+        // GET: RestaurantMenu/Edit/5
+        public ActionResult Edit(string id, string ownerType = null, string ownerId = null)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            RestaurantMenu restaurantMenu = db.RestaurantMenu.Find(int.Parse(DataSecurityTripleDES.GetPlainText(id)));
+            if (restaurantMenu == null)
+            {
+                return HttpNotFound();
+            }
+            return View(restaurantMenu);
+        }
+
+        // POST: RestaurantMenu/Edit/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost, ActionName("Edit")]
+        [ValidateAntiForgeryToken]
+        public ActionResult EditPost(string id, string ownerType = null, string ownerId = null)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            var RestaurantMenuToUpdate = db.RestaurantMenu.Find(int.Parse(DataSecurityTripleDES.GetPlainText(id)));
+            if (TryUpdateModel(RestaurantMenuToUpdate, "",
+               new string[] { "Name, Brief, Detail, UnitPrice" }))
+            {
+                try
+                {
+                    db.SaveChanges();
+
+                    return RedirectToAction("Index");
+                }
+                catch (RetryLimitExceededException /* dex */)
+                {
+                    //Log the error (uncomment dex variable name and add a line here to write a log.
+                    ModelState.AddModelError("", "Unable to save changes. Try again, and if the problem persists, see your system administrator.");
+                }
+            }
+            return View(RestaurantMenuToUpdate);
+        }
+
+        // GET: RestaurantMenu/Delete/5
+        public ActionResult Delete(string id, bool? saveChangesError = false, string ownerType = null, string ownerId = null)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewBag.ErrorMessage = "Delete failed. Try again, and if the problem persists see your system administrator.";
+            }
+            var RestaurantMenuToUpdate = db.RestaurantMenu.Find(int.Parse(DataSecurityTripleDES.GetPlainText(id)));
+            if (RestaurantMenuToUpdate == null)
+            {
+                return HttpNotFound();
+            }
+            return View(RestaurantMenuToUpdate);
+        }
+
+        // POST: RestaurantMenu/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Delete(string id, string ownerType = null, string ownerId = null)
+        {
+            try
+            {
+                RestaurantMenu restaurantMenu = db.RestaurantMenu.Find(int.Parse(DataSecurityTripleDES.GetPlainText(id)));
+                db.RestaurantMenu.Remove(restaurantMenu);
+                db.SaveChanges();
+            }
+            catch (RetryLimitExceededException/* dex */)
+            {
+                //Log the error (uncomment dex variable name and add a line here to write a log.
+                return RedirectToAction("Delete", new {
+                    id = DataSecurityTripleDES.GetEncryptedText(id),
+                    saveChangesError = true,
+                    ownerType = ownerType, 
+                    ownerId = ownerId
+                });
+            }
+            return RedirectToAction("Index");
         }
     }
 }

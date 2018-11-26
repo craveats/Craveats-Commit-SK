@@ -121,10 +121,26 @@ namespace WebApplication.Models.ViewModel
                                             }
                                             else
                                             {
-                                                propertyInfo.SetValue(targetEntity,
-                                                    Convert.ChangeType(
-                                                        objValue,
-                                                        propertyInfo.PropertyType));
+                                                if (propertyInfo.Name == "OwnerType" &&
+                                                    (propertyInfo.ReflectedType.FullName == "WebApplication.DAL.Address" || 
+                                                    propertyInfo.ReflectedType.FullName == "WebApplication.Models.ViewModel.AddressDTO"))
+                                                {
+                                                    int? iVal = int.Parse(DataSecurityTripleDES.GetPlainText(
+                                                        uProp.GetValue(
+                                                            sourceDTO,
+                                                            null)));
+
+                                                    propertyInfo.SetValue(
+                                                        targetEntity,
+                                                        iVal);
+                                                }
+                                                else
+                                                {
+                                                    propertyInfo.SetValue(targetEntity,
+                                                        Convert.ChangeType(
+                                                            objValue,
+                                                            propertyInfo.PropertyType));
+                                                }
                                             }
                                         }
                                     }
