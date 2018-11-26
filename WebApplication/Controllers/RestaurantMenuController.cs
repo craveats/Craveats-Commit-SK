@@ -31,13 +31,16 @@ namespace WebApplication.Controllers
             }
             else
             {
-                ownerType = ViewBag.ownerType ;
-                ownerId = ViewBag.ownerId;
+                ownerType = DataSecurityTripleDES.GetEncryptedText((int) SessionManager.GetContextSessionOwnerType());
+                ownerId = SessionManager.GetContextSessionLoggedUserID();
+
+                ViewBag.ownerType = ownerType;
+                ViewBag.ownerId = ownerId;
             }
 
-            ViewBag.CurrentSort = sortOrder;
 
             ViewBag.CurrentSort = sortOrder;
+
             ViewBag.NameSortParm = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
             ViewBag.DateSortParm = sortOrder == "Date" ? "date_desc" : "Date";
 
@@ -53,9 +56,13 @@ namespace WebApplication.Controllers
             ViewBag.CurrentFilter = searchString;
 
             int? filterId = int.Parse(DataSecurityTripleDES.GetPlainText(ownerId));
-            var RestaurantMenus = from s in db.RestaurantMenu 
-                                  where s.OwnerId == filterId
-                                  select s;
+            var RestaurantMenus = SessionManager.GetContextSessionOwnerType() == UserTypeEnum.PartnerRestaurant 
+                ? from s in db.RestaurantMenu 
+                  where s.OwnerId == filterId && s.OwnerType == 2 && s.ServiceStatus == 1
+                  select s
+                : from s in db.RestaurantMenu
+                  select s;
+
             if (!String.IsNullOrEmpty(searchString))
             {
                 RestaurantMenus = RestaurantMenus.Where(s => s.Name.Contains(searchString)
@@ -92,6 +99,9 @@ namespace WebApplication.Controllers
             }
             else
             {
+                ownerType = DataSecurityTripleDES.GetEncryptedText((int)SessionManager.GetContextSessionOwnerType());
+                ownerId = SessionManager.GetContextSessionLoggedUserID();
+
                 ViewBag.ownerType = ownerType;
                 ViewBag.ownerId = ownerId;
             }
@@ -130,9 +140,11 @@ namespace WebApplication.Controllers
                     (u.ServiceProviderStatus.HasValue &&
                     u.ServiceProviderStatus.Value == (int)Common.ServiceProviderStatusEnum.Inactive) &&
                     u.AddressId.HasValue);
-
-                    ownerRestaurant.ServiceProviderStatus = (int)Common.ServiceProviderStatusEnum.Active;
-                    db.SaveChanges();
+                    if (ownerRestaurant != null)
+                    {
+                        ownerRestaurant.ServiceProviderStatus = (int)Common.ServiceProviderStatusEnum.Active;
+                        db.SaveChanges();
+                    }
 
                     return RedirectToAction("Index", new { ownerType = ownerType, ownerId = ownerId }); 
                 }
@@ -197,7 +209,7 @@ namespace WebApplication.Controllers
                 {
                     db.SaveChanges();
 
-                    return RedirectToAction("Index");
+                    return RedirectToAction("Index", new { ownerType = ownerType, ownerId = ownerId });
                 }
                 catch (RetryLimitExceededException /* dex */)
                 {
@@ -248,7 +260,7 @@ namespace WebApplication.Controllers
                     ownerId = ownerId
                 });
             }
-            return RedirectToAction("Index");
+            return RedirectToAction("Index", new { ownerType = ownerType, ownerId = ownerId });
         }
     }
 }
